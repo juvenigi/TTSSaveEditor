@@ -1,0 +1,13 @@
+# General
+- simple gui for asking where the tts savefiles are located
+- REST API for savefile push / pull
+
+# Design principles
+
+- broker is the single source of truth
+    - it knows if TTS is running a 'stale' file
+    - it notifies subscribers of new changes
+    - the subscribers need to handle updates: discard changes, override, create copy
+
+Diagram:
+<editor: web, intellij> -- <golang broker> -- <TTS>
