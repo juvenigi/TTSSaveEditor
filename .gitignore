@@ -1,0 +1,12 @@
+# Compiled Angular
+/res/angular/
+/frontend/dist/
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
