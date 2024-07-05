@@ -1,15 +1,16 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {Store} from "@ngrx/store";
-import {selectFsPath, selectSaveData} from "./store/app.selectors";
-import {AsyncPipe} from "@angular/common";
+import {AsyncPipe, NgComponentOutlet} from "@angular/common";
 import {firstValueFrom} from "rxjs";
 import {AppActions} from "./store/app.actions";
+import {HeaderComponent} from "./components/header/header.component";
+import {selectFsPath, selectSaveData} from "./store/app.reducer";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AsyncPipe],
+  imports: [RouterOutlet, AsyncPipe, HeaderComponent, NgComponentOutlet],
   providers: [],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'

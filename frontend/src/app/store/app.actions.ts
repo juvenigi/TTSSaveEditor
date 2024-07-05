@@ -6,7 +6,6 @@ export const AppActions = createActionGroup({
     'Request Savefile': props<{ fsPath: string }>()
   }
 })
-
 export const SaveFileApiActions = createActionGroup({
   source: 'SaveFile API',
   events: {

@@ -1,4 +1,4 @@
-import {createReducer, on} from '@ngrx/store';
+import {createFeatureSelector, createReducer, createSelector, on} from '@ngrx/store';
 import {AppActions, SaveFileApiActions} from "./app.actions";
 
 export const reducerFeatureKey = 'reducer';
@@ -25,5 +25,18 @@ export const reducer = createReducer(
     console.debug(`fetching failed ${statusCode}, ${fsPath}, ${message}`);
     return {...initialState, loadingState: "FAILED"} satisfies AppState;
   })
+);
+
+// Feature selector for the AppState
+export const selectAppState = createFeatureSelector<AppState>(reducerFeatureKey);
+
+// Selector for saveData
+export const selectSaveData = createSelector(
+  selectAppState, (state: AppState) => state?.saveData
+);
+
+// Selector for fsPath
+export const selectFsPath = createSelector(
+  selectAppState, (state: AppState) => state?.fsPath
 );
 
