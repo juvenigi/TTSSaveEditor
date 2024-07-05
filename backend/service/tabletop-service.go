@@ -2,6 +2,7 @@ package service
 
 import (
 	"TTSBundler/backend/domain"
+	"encoding/json"
 	"errors"
 	"path/filepath"
 )
@@ -20,4 +21,14 @@ func GetSaveJson(path string) ([]byte, error) {
 	} else {
 		return data, nil
 	}
+}
+
+func GetEntries(path string) ([]byte, error) {
+	if path != "" {
+		err := tt.ScanPathForSaves(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return json.Marshal(tt.GetSaves())
 }
