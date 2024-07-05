@@ -5,16 +5,16 @@ export const reducerFeatureKey = 'reducer';
 
 export interface AppState {
   fsPath: string
+  savefilePaths: string[]
   saveData: string | undefined
   loadingState: "DONE" | "LOADING" | "PENDING" | "FAILED"
 }
 
-export const initialState: AppState = {saveData: "", fsPath: "initial", loadingState: "PENDING"};
+export const initialState: AppState = {saveData: "", savefilePaths: [], fsPath: "initial", loadingState: "PENDING"};
 
 export const reducer = createReducer(
   initialState,
   on(AppActions.requestSavefile, (state, {fsPath}) => {
-    console.debug("reducer fired")
     return {...state, loadingState: (state.fsPath !== fsPath) ? "LOADING" : "DONE"} satisfies AppState;
   }),
   on(SaveFileApiActions.savefileRetrieveSuccess, (state, {data, fsPath}) => {
@@ -24,6 +24,11 @@ export const reducer = createReducer(
   on(SaveFileApiActions.savefileRetrieveFailure, (_, {message, statusCode, fsPath}) => {
     console.debug(`fetching failed ${statusCode}, ${fsPath}, ${message}`);
     return {...initialState, loadingState: "FAILED"} satisfies AppState;
+  }),
+  on(SaveFileApiActions.requestSavefilesSuccess, (state, res) => {
+
+    console.debug(res)
+    return {...state, savefilePaths: res.paths, fsPath: res.fsPath} satisfies AppState;
   })
 );
 
@@ -40,3 +45,6 @@ export const selectFsPath = createSelector(
   selectAppState, (state: AppState) => state?.fsPath
 );
 
+export const selectAvailablePaths = createSelector(
+  selectAppState, (state) => state.savefilePaths
+)

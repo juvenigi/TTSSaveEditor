@@ -2,7 +2,7 @@ import {inject, Injectable} from "@angular/core";
 import {Actions, createEffect, ofType} from "@ngrx/effects";
 import {AppService} from "./app.service";
 import {catchError, EMPTY, exhaustMap, map, switchMap} from "rxjs";
-import {AppActions} from "./app.actions";
+import {AppActions, SaveFileApiActions} from "./app.actions";
 
 @Injectable()
 export class AppEffects {
@@ -22,5 +22,18 @@ export class AppEffects {
           catchError(() => EMPTY)
         );
     })
+  ));
+
+  fetchDir$ = createEffect(() => this.actions$.pipe(
+    ofType(SaveFileApiActions.requestSavefiles),
+    switchMap(({fsPath}) => this.service.getDirectory(fsPath).pipe(
+      map((paths: string[]) => {
+        console.debug("effect fired")
+        console.log(fsPath)
+        console.debug(paths)
+        return {type: '[SaveFile API] Request Savefiles Success', paths, fsPath }
+      }),
+      catchError(() => EMPTY)
+    ))
   ));
 }

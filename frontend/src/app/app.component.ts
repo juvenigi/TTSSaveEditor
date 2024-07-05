@@ -6,11 +6,12 @@ import {firstValueFrom} from "rxjs";
 import {AppActions} from "./store/app.actions";
 import {HeaderComponent} from "./components/header/header.component";
 import {selectFsPath, selectSaveData} from "./store/app.reducer";
+import {DirectoryPageComponent} from "./pages/directory.page/directory.page.component";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AsyncPipe, HeaderComponent, NgComponentOutlet],
+  imports: [RouterOutlet, AsyncPipe, HeaderComponent, NgComponentOutlet, DirectoryPageComponent],
   providers: [],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'

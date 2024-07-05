@@ -9,6 +9,8 @@ export const AppActions = createActionGroup({
 export const SaveFileApiActions = createActionGroup({
   source: 'SaveFile API',
   events: {
+    'Request Savefiles': props<{ fsPath: string }>(),
+    'Request Savefiles Success': props<{ paths: string[], fsPath: string }>(),
     'Savefile Retrieve Success': props<{ data: string, fsPath: string }>(),
     'Savefile Retrieve Failure': props<{ message: string, statusCode: number, fsPath: string }>()
   }

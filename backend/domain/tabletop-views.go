@@ -1,7 +1,7 @@
 package domain
 
 type SaveEntry struct {
-	Path string
+	Path string `json:"path"`
 }
 
 func (tt *Tabletop) GetSaves() []SaveEntry {
