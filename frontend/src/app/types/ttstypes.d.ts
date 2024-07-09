@@ -1,7 +1,9 @@
-/* tslint:disable */
-/** Execute `npm run generate` to regenerate **/
-/* Generated from CalculatorState.json */
+/* Borrowed from https://github.com/matanlurey/tts-save-format
+ *
+ * Thank you, matanlurey!
+ */
 
+/* tslint:disable */
 export interface CalculatorState {
   value: string;
   memory: number;
