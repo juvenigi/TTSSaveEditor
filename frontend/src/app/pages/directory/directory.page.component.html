@@ -1,5 +1,20 @@
-@for (item of savefiles$ | async; track $index; let i = $index) {
-  <div (click)="onSelect(item)">{{ item }}</div>
-} @empty {
-  <i>no items</i>
-}
+<div class="container">
+  <div class="row btn-group gap-2">
+    @for (item of relFolders$ | async; track $index) {
+      <button type="button"
+              class="col-auto btn btn-primary"
+              (click)="onFolderSelect(item)"
+      ><i class="bi bi-folder"></i>{{ item }}
+      </button>
+    }
+  </div>
+  @for (item of savefiles$ | async; track $index) {
+    @if (pathMask$ | async; as mask) {
+      @if (item.includes(mask)) {
+        <div class="row" (click)="onSelect(item)">{{ item }}</div>
+      }
+    }
+  } @empty {
+    <i>no items</i>
+  }
+</div>

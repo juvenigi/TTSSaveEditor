@@ -1,11 +1,13 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {AsyncPipe} from "@angular/common";
 import {Router} from "@angular/router";
-import {selectDirectory} from "../../store/directory/directory.selector";
-import {map, Observable, tap} from "rxjs";
+import {map, Observable} from "rxjs";
 import {SaveFileApiActions} from "../../store/savefile/savefile.actions";
-import {Directory} from "../../store/directory/directory.models";
+import {Directory} from "../../store/directory/directory.state";
+import {selectDirectoryState} from "../../store/directory/directory.reducer";
+import {selectPathMask, selectRelDirectories} from "../../store/directory/directory.selector";
+import {DirectoryApiActions} from "../../store/directory/directory.actions";
 
 @Component({
   selector: 'app-directory-page',
@@ -19,12 +21,20 @@ import {Directory} from "../../store/directory/directory.models";
 export class DirectoryPageComponent {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-
-  savefiles$: Observable<string[]> = this.store.select(selectDirectory)
+  savefiles$: Observable<string[]> = this.store.select(selectDirectoryState)
     .pipe(map((dir: Directory) => dir.directoryEntries));
+
+  relFolders$: Observable<string[]> = this.store.select(selectRelDirectories)
+
+  pathMask$: Observable<string> = this.store.select(selectPathMask);
 
   onSelect(path: string) {
     this.store.dispatch(SaveFileApiActions.requestSavefileByPath({path}))
     void this.router.navigate(["savefile"]);
   }
+
+  onFolderSelect(folder: string) {
+    this.store.dispatch(DirectoryApiActions.navigateToFolder({folder}))
+  }
+
 }

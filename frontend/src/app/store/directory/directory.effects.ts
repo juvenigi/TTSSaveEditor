@@ -12,7 +12,7 @@ export class DirectoryEffects {
     ofType(DirectoryApiActions.requestDirectory),
     switchMap(({rootPath}) => this.service.getDirectory(rootPath).pipe(
       map((directoryEntries: string[]) => DirectoryApiActions
-        .directorySuccessResponse({directory: {directoryEntries, rootPath, loadingState: "DONE"}})),
+        .directorySuccessResponse({directory: {directoryEntries, rootPath, relPath: "", loadingState: "DONE"}})),
       catchError((err) => of(DirectoryApiActions.directoryFailureResponse({request: rootPath, message: err})))
     ))
   ));

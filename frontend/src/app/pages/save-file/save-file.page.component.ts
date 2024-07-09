@@ -24,7 +24,5 @@ export class SaveFilePageComponent {
   saveState$ = this.store.select(selectSavefileHeader).pipe(requiredFilter());
 
   private flat$ = this.store.select(selectFlattenedObjects).pipe(requiredFilter());
-  flatObjects$ = this.flat$.pipe(map(({objects}) => objects));
-  parentOf$ = this.flat$.pipe(map(({parentOf}) => parentOf));
-  pathMap$ = this.flat$.pipe(map(({pathMap})=>pathMap));
+  flatObjects$ = this.flat$.pipe(map((objs) => objs.map(o => o.object)));
 }

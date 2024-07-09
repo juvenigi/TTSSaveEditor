@@ -1,6 +1,6 @@
 import {createFeatureSelector, createReducer, on} from '@ngrx/store';
 
-import {initialSaveFileState, SaveFile} from "./savefile.models";
+import {initialSaveFileState, SaveFile} from "./savefile.state";
 import {SaveFileApiActions} from "./savefile.actions";
 
 export const savefileReducerKey = 'savefileReducer';

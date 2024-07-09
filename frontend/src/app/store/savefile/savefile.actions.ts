@@ -1,5 +1,5 @@
 import {createActionGroup, emptyProps, props} from "@ngrx/store";
-import {SaveFile} from "./savefile.models";
+import {SaveFile} from "./savefile.state";
 
 export const SaveFileApiActions = createActionGroup({
   source: 'SaveFile API',

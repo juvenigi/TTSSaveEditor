@@ -1,7 +1,7 @@
 import {selectSavefileState} from "./savefile.reducer";
 import {createSelector} from "@ngrx/store";
-import {SaveFile, trimName} from "./savefile.models";
-import {ObjectState} from "../../types/ttstypes";
+import {flattenContainedObjects, SaveFile, trimName} from "./savefile.state";
+import {selectSearchFilter} from "../search-filters/search-filter.reducer";
 
 
 export const selectSaveLoadingState = createSelector(
@@ -24,39 +24,20 @@ export const selectSavefileHeader = createSelector(
 
 export const selectFlattenedObjects = createSelector(
   selectSavefileState,
-  (state: SaveFile) => {
+  selectSearchFilter,
+  (state, {jsonPath, search}) => {
     const data = state.saveData
     if (!data) return;
-    return flattenContainedObjects(data.ObjectStates);
+    return flattenContainedObjects(data.ObjectStates).filter(object => {
+      const pathCondition = jsonPath.length === 0 || object.jsonRelPath.join('/') === jsonPath.join('/');
+      const searchCondition = search.length === 0 || Object.values(object.object).some(value => {
+        return value.toString().replaceAll("[\\][\s\S]\g", "").includes(search);
+      });
+
+      return pathCondition && searchCondition;
+    });
   }
 );
 
-function flattenContainedObjects(objects: ObjectState[]): {
-  objects: ObjectState[],
-  parentOf: Map<ObjectState, ObjectState>,
-  pathMap: Map<ObjectState, number[]>
-} {
-  const parentOf: Map<ObjectState, ObjectState> = new Map();
-  const pathMap: Map<ObjectState, number[]> = new Map();
-  return {
-    parentOf,
-    pathMap,
-    objects: deepVisitContainedObjectsRecur(objects, parentOf, pathMap, []),
-  }
-}
 
-function deepVisitContainedObjectsRecur(
-  objects: ObjectState[],
-  parentOf: Map<ObjectState, ObjectState>,
-  pathMap: Map<ObjectState, number[]>,
-  currentPath: number[]
-): ObjectState[] {
-  return objects.flatMap((obj: ObjectState, idx: number): ObjectState[] => {
-    const finalCurrentPath = [...currentPath, idx];
-    pathMap.set(obj, finalCurrentPath)
-    if (!obj.ContainedObjects) return [obj];
-    obj.ContainedObjects!.forEach((contained: ObjectState) => parentOf.set(contained, obj));
-    return [obj, ...deepVisitContainedObjectsRecur(obj.ContainedObjects, parentOf, pathMap, finalCurrentPath)];
-  });
-}
 
