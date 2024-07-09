@@ -16,7 +16,7 @@ and load/edit your save files from there.
 
 ## Features / Implementation roadmap
 
-- [ ] load tabletop savefile
+- [X] load tabletop savefile
 - [ ] edit objects of the tabletop savefile
   - [ ] basic json editing
   - [ ] simplified version
