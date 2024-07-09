@@ -5,7 +5,8 @@ import {catchError, EMPTY, map, switchMap} from "rxjs";
 import {Store} from "@ngrx/store";
 import {SaveFileApiActions} from "./savefile.actions";
 import {SaveFile} from "./savefile.models";
-import {JSONValue} from "../../misc";
+import {JSONValue} from "../../types/json";
+import {SaveState} from "../../types/ttstypes";
 
 @Injectable()
 export class SavefileEffects {
@@ -18,7 +19,7 @@ export class SavefileEffects {
     switchMap(({path}) => {
       return this.service
         .getSaveFile(path).pipe(
-          map((data: JSONValue) => SaveFileApiActions.savefileSuccess({
+          map((data: SaveState) => SaveFileApiActions.savefileSuccess({
             data: ({
               saveData: data,
               path,

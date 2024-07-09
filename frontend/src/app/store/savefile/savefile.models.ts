@@ -1,15 +1,15 @@
-import {JSONValue} from "../../misc";
+import {SaveState} from "../../types/ttstypes";
 
 export interface SaveFile {
   path: string
-  saveData: JSONValue
+  saveData?: SaveState
   objectEdits: Map<string, any>
   loadingState: "DONE" | "LOADING" | "PENDING" | "FAILED"
 }
 
 export const initialSaveFileState: SaveFile = {
   path: "",
-  saveData: null,
+  saveData: undefined,
   objectEdits: new Map(),
   loadingState: "PENDING"
 };

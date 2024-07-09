@@ -1,0 +1,1562 @@
+{
+  "$ref": "#/definitions/SaveState",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "CalculatorState": {
+      "additionalProperties": false,
+      "properties": {
+        "memory": {
+          "type": "number"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "memory"
+      ],
+      "type": "object"
+    },
+    "CameraState": {
+      "additionalProperties": false,
+      "properties": {
+        "AbsolutePosition": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "Distance": {
+          "type": "number"
+        },
+        "Position": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "Rotation": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "Zoomed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "Position",
+        "Rotation",
+        "Distance",
+        "Zoomed"
+      ],
+      "type": "object"
+    },
+    "ClockSaveState": {
+      "additionalProperties": false,
+      "properties": {
+        "ClockState": {},
+        "Paused": {
+          "type": "boolean"
+        },
+        "SecondsPassed": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ClockState",
+        "SecondsPassed",
+        "Paused"
+      ],
+      "type": "object"
+    },
+    "ColourState": {
+      "additionalProperties": false,
+      "properties": {
+        "a": {
+          "type": "number"
+        },
+        "b": {
+          "type": "number"
+        },
+        "g": {
+          "type": "number"
+        },
+        "r": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "r",
+        "g",
+        "b"
+      ],
+      "type": "object"
+    },
+    "CounterState": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "type": "object"
+    },
+    "CustomAssetState": {
+      "additionalProperties": false,
+      "properties": {
+        "Name": {
+          "type": "string"
+        },
+        "URL": {
+          "description": "URL or empty string",
+          "type": "string"
+        }
+      },
+      "required": [
+        "Name",
+        "URL"
+      ],
+      "type": "object"
+    },
+    "CustomAssetbundleState": {
+      "additionalProperties": false,
+      "properties": {
+        "AssetbundleSecondaryURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "AssetbundleURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "LoopingEffectIndex": {
+          "type": "number"
+        },
+        "MaterialIndex": {
+          "description": "0 = Plastic, 1 = Wood, 2 = Metal, 3 = Cardboard, 4 = Glass",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "type": "number"
+        },
+        "TypeIndex": {
+          "description": "0 = Generic, 1 = Figurine, 2 = Dice, 3 = Coin, 4 = Board, 5 = Chip, 6 = Bag, 7 = Infinite",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "AssetbundleURL",
+        "AssetbundleSecondaryURL",
+        "MaterialIndex",
+        "TypeIndex",
+        "LoopingEffectIndex"
+      ],
+      "type": "object"
+    },
+    "CustomDecalState": {
+      "additionalProperties": false,
+      "properties": {
+        "ImageURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "Size": {
+          "description": "Size in inches.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "Name",
+        "ImageURL"
+      ],
+      "type": "object"
+    },
+    "CustomDeckState": {
+      "additionalProperties": false,
+      "properties": {
+        "BackIsHidden": {
+          "description": "Back of cards becames the hidden card when in a hand.",
+          "type": "boolean"
+        },
+        "BackURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "FaceURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "NumHeight": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "NumWidth": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "UniqueBack": {
+          "description": "Each back is a unique card just like the front.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "FaceURL",
+        "BackURL",
+        "BackIsHidden",
+        "UniqueBack"
+      ],
+      "type": "object"
+    },
+    "CustomDiceState": {
+      "additionalProperties": false,
+      "properties": {
+        "Type": {}
+      },
+      "required": [
+        "Type"
+      ],
+      "type": "object"
+    },
+    "CustomImageState": {
+      "additionalProperties": false,
+      "properties": {
+        "CustomDice": {
+          "$ref": "#/definitions/CustomDiceState"
+        },
+        "CustomJigsawPuzzle": {
+          "$ref": "#/definitions/CustomJigsawPuzzleState"
+        },
+        "CustomTile": {
+          "$ref": "#/definitions/CustomTileState"
+        },
+        "CustomToken": {
+          "$ref": "#/definitions/CustomTokenState"
+        },
+        "ImageScalar": {},
+        "ImageSecondaryURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "ImageURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "WidthScale": {
+          "description": "Holds the scaled size of the object based on the image dimensions.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ImageURL",
+        "ImageSecondaryURL"
+      ],
+      "type": "object"
+    },
+    "CustomJigsawPuzzleState": {
+      "additionalProperties": false,
+      "properties": {
+        "ImageOnBoard": {
+          "type": "boolean"
+        },
+        "NumPuzzlePieces": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ImageOnBoard"
+      ],
+      "type": "object"
+    },
+    "CustomMeshState": {
+      "additionalProperties": false,
+      "properties": {
+        "CastShadows": {
+          "type": "boolean"
+        },
+        "ColliderURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "Convex": {
+          "type": "boolean"
+        },
+        "CustomShader": {
+          "$ref": "#/definitions/CustomShaderState"
+        },
+        "DiffuseURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "MaterialIndex": {
+          "description": "0 = Plastic, 1 = Wood, 2 = Metal, 3 = Cardboard, 4 = Glass",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "type": "number"
+        },
+        "MeshURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "NormalURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        },
+        "TypeIndex": {
+          "description": "0 = Generic, 1 = Figurine, 2 = Dice, 3 = Coin, 4 = Board, 5 = Chip, 6 = Bag, 7 = Infinite",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "MeshURL",
+        "DiffuseURL",
+        "NormalURL",
+        "ColliderURL",
+        "Convex",
+        "MaterialIndex",
+        "TypeIndex",
+        "CastShadows"
+      ],
+      "type": "object"
+    },
+    "CustomShaderState": {
+      "additionalProperties": false,
+      "properties": {
+        "FresnelStrength": {
+          "type": "number"
+        },
+        "SpecularColor": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "SpecularIntensity": {
+          "type": "number"
+        },
+        "SpecularSharpness": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "SpecularColor",
+        "SpecularIntensity",
+        "SpecularSharpness",
+        "FresnelStrength"
+      ],
+      "type": "object"
+    },
+    "CustomTileState": {
+      "additionalProperties": false,
+      "properties": {
+        "Stackable": {
+          "type": "boolean"
+        },
+        "Stretch": {
+          "type": "boolean"
+        },
+        "Thickness": {
+          "type": "number"
+        },
+        "Type": {
+          "description": "0 = Plastic, 1 = Wood, 2 = Metal, 3 = Cardboard",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "Type",
+        "Thickness",
+        "Stackable",
+        "Stretch"
+      ],
+      "type": "object"
+    },
+    "CustomTokenState": {
+      "additionalProperties": false,
+      "properties": {
+        "MergeDistancePixels": {
+          "type": "number"
+        },
+        "Stackable": {
+          "type": "boolean"
+        },
+        "Thickness": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "Thickness",
+        "MergeDistancePixels",
+        "Stackable"
+      ],
+      "type": "object"
+    },
+    "DecalState": {
+      "additionalProperties": false,
+      "properties": {
+        "CustomDecal": {
+          "$ref": "#/definitions/CustomDecalState"
+        },
+        "Transform": {
+          "$ref": "#/definitions/TransformState"
+        }
+      },
+      "required": [
+        "Transform",
+        "CustomDecal"
+      ],
+      "type": "object"
+    },
+    "FogOfWarRevealerSaveState": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "color": {
+          "type": "string"
+        },
+        "range": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "active",
+        "range",
+        "color"
+      ],
+      "type": "object"
+    },
+    "FogOfWarSaveState": {
+      "additionalProperties": false,
+      "properties": {
+        "Height": {
+          "type": "number"
+        },
+        "HideGmPointer": {
+          "type": "boolean"
+        },
+        "HideObjects": {
+          "type": "boolean"
+        },
+        "RevealedLocations": {
+          "additionalProperties": {},
+          "description": "Dictionary<string, HashSet<int>",
+          "type": "object"
+        }
+      },
+      "required": [
+        "HideGmPointer",
+        "HideObjects",
+        "Height",
+        "RevealedLocations"
+      ],
+      "type": "object"
+    },
+    "GridState": {
+      "additionalProperties": false,
+      "properties": {
+        "BothSnapping": {
+          "description": "Boths snapping.",
+          "type": "boolean"
+        },
+        "Color": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "Lines": {
+          "type": "boolean"
+        },
+        "Offset": {
+          "description": "Center snapping.",
+          "type": "boolean"
+        },
+        "Opacity": {
+          "description": "Alpha opacity.",
+          "type": "number"
+        },
+        "PosOffset": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "Snapping": {
+          "description": "Line snapping.",
+          "type": "boolean"
+        },
+        "ThickLines": {
+          "type": "boolean"
+        },
+        "Type": {
+          "description": "0 = Box, 1 = Horizontal, 2 = HexVertical",
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "type": "number"
+        },
+        "xSize": {
+          "type": "number"
+        },
+        "ySize": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "Type",
+        "Lines",
+        "Color",
+        "Opacity",
+        "ThickLines",
+        "Snapping",
+        "Offset",
+        "BothSnapping",
+        "xSize",
+        "ySize"
+      ],
+      "type": "object"
+    },
+    "HandTransformState": {
+      "additionalProperties": false,
+      "properties": {
+        "Color": {
+          "type": "string"
+        },
+        "Transform": {
+          "$ref": "#/definitions/TransformState"
+        }
+      },
+      "required": [
+        "Color",
+        "Transform"
+      ],
+      "type": "object"
+    },
+    "HandsState": {
+      "additionalProperties": false,
+      "properties": {
+        "DisableUnused": {
+          "type": "boolean"
+        },
+        "Enable": {
+          "type": "boolean"
+        },
+        "HandTransforms": {
+          "items": {
+            "$ref": "#/definitions/HandTransformState"
+          },
+          "type": "array"
+        },
+        "Hiding": {
+          "description": "0 = Default = only owner can see, 1 = Reverse = opposite of default, 2 = Disable = hiding is disabled.",
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "Enable",
+        "DisableUnused",
+        "Hiding",
+        "HandTransforms"
+      ],
+      "type": "object"
+    },
+    "JointFixedState": {
+      "$ref": "#/definitions/JointState",
+      "description": "http://docs.unity3d.com/ScriptReference/FixedJoint.html"
+    },
+    "JointHingeState": {
+      "additionalProperties": false,
+      "description": "http://docs.unity3d.com/ScriptReference/HingeJoint.html",
+      "properties": {
+        "Limits": {
+          "additionalProperties": {},
+          "description": "Limit of angular rotation on the hinge joint. http://docs.unity3d.com/ScriptReference/JointLimits.html.",
+          "type": "object"
+        },
+        "Motor": {
+          "additionalProperties": {},
+          "description": "Limit of angular rotation on the hinge joint. The motor will apply a force up to a maximum force to achieve the target velocity in degrees per second. http://docs.unity3d.com/ScriptReference/JointMotor.html.",
+          "type": "object"
+        },
+        "Spring": {
+          "additionalProperties": {},
+          "description": "The spring attempts to reach a target angle by adding spring and damping forces. http://docs.unity3d.com/ScriptReference/JointSpring.html.",
+          "type": "object"
+        },
+        "UseLimits": {
+          "type": "boolean"
+        },
+        "UseMotor": {
+          "type": "boolean"
+        },
+        "UseSpring": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "UseLimits",
+        "Limits",
+        "UseMotor",
+        "Motor",
+        "UseSpring",
+        "Spring"
+      ],
+      "type": "object"
+    },
+    "JointSpringState": {
+      "additionalProperties": false,
+      "description": "http://docs.unity3d.com/ScriptReference/SpringJoint.html",
+      "properties": {
+        "Damper": {
+          "description": "The damper force used to dampen the spring force",
+          "type": "number"
+        },
+        "MaxDistance": {
+          "description": "The maximum distance between the bodies relative to their initial distance.",
+          "type": "number"
+        },
+        "MinDistance": {
+          "description": "The minimum distance between the bodies relative to their initial distance.",
+          "type": "number"
+        },
+        "Spring": {
+          "description": "The spring force used to keep the two objects together.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "Damper",
+        "MaxDistance",
+        "MinDistance",
+        "Spring"
+      ],
+      "type": "object"
+    },
+    "JointState": {
+      "additionalProperties": false,
+      "description": "http://docs.unity3d.com/ScriptReference/Joint.html",
+      "properties": {
+        "Anchor": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "Axis": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "BreakForce": {
+          "description": "The force that needs to be applied for this joint to break.",
+          "type": "number"
+        },
+        "BreakTorgue": {
+          "description": "The torque that needs to be applied for this joint to break.",
+          "type": "number"
+        },
+        "ConnectedBodyGUID": {
+          "description": "A reference to another rigidbody this joint connects to.",
+          "type": "string"
+        },
+        "EnableCollision": {
+          "description": "Enable collision between bodies connected with the joint.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ConnectedBodyGUID",
+        "EnableCollision",
+        "Axis",
+        "Anchor",
+        "BreakForce",
+        "BreakTorgue"
+      ],
+      "type": "object"
+    },
+    "LightingState": {
+      "additionalProperties": false,
+      "properties": {
+        "AmbientEquatorColor": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "AmbientGroundColor": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "AmbientIntensity": {
+          "type": "number"
+        },
+        "AmbientSkyColor": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "AmbientType": {
+          "description": "0 = Background = ambient light comes from the background, 1 = Gradient = ambient light comes from the three ambient colors.",
+          "enum": [
+            0,
+            1
+          ],
+          "type": "number"
+        },
+        "LightColor": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "LightIntensity": {
+          "type": "number"
+        },
+        "LutContribution": {
+          "type": "number"
+        },
+        "LutIndex": {
+          "type": "number"
+        },
+        "LutURL": {
+          "description": "LUT 256x16",
+          "type": "string"
+        },
+        "ReflectionIntensity": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "LightIntensity",
+        "LightColor",
+        "AmbientIntensity",
+        "AmbientType",
+        "AmbientSkyColor",
+        "AmbientEquatorColor",
+        "AmbientGroundColor",
+        "ReflectionIntensity",
+        "LutIndex",
+        "LutContribution"
+      ],
+      "type": "object"
+    },
+    "Mp3PlayerState": {
+      "additionalProperties": false,
+      "properties": {
+        "genre": {
+          "type": "string"
+        },
+        "isPlaying": {
+          "type": "boolean"
+        },
+        "loopOne": {
+          "type": "boolean"
+        },
+        "menu": {},
+        "menuTitle": {
+          "type": "string"
+        },
+        "songTitle": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "songTitle",
+        "genre",
+        "volume",
+        "isPlaying",
+        "loopOne",
+        "menuTitle",
+        "menu"
+      ],
+      "type": "object"
+    },
+    "ObjectState": {
+      "additionalProperties": false,
+      "properties": {
+        "AltSound": {
+          "description": "Some objects have 2 materials, with two sound sets.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "AttachedDecals": {
+          "description": "Decals that are attached to this objects.",
+          "items": {
+            "$ref": "#/definitions/DecalState"
+          },
+          "type": "array"
+        },
+        "AttachedSnapPoints": {
+          "description": "Snap points that are stuck to this object, happens when placing a snap point on a locked object.",
+          "items": {
+            "$ref": "#/definitions/SnapPointState"
+          },
+          "type": "array"
+        },
+        "AttachedVectorLines": {
+          "description": "Vector lines that are stuck to this object, happens when drawing a vector line on a locked object.",
+          "items": {
+            "$ref": "#/definitions/VectorLineState"
+          },
+          "type": "array"
+        },
+        "Autoraise": {
+          "description": "Object will raise above others and avoid collision.",
+          "type": "boolean"
+        },
+        "Calculator": {
+          "$ref": "#/definitions/CalculatorState"
+        },
+        "CardID": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "Clock": {
+          "$ref": "#/definitions/ClockSaveState"
+        },
+        "ColorDiffuse": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "ContainedObjects": {
+          "description": "Objects inside this one.",
+          "items": {
+            "$ref": "#/definitions/ObjectState"
+          },
+          "type": "array"
+        },
+        "Counter": {
+          "$ref": "#/definitions/CounterState"
+        },
+        "CustomAssetbundle": {
+          "$ref": "#/definitions/CustomAssetbundleState"
+        },
+        "CustomDeck": {
+          "additionalProperties": {
+            "$ref": "#/definitions/CustomDeckState"
+          },
+          "description": "Key matches the hundreth place of the id (ex. id = 354, index = 3).",
+          "type": "object"
+        },
+        "CustomImage": {
+          "$ref": "#/definitions/CustomImageState"
+        },
+        "CustomMesh": {
+          "$ref": "#/definitions/CustomMeshState"
+        },
+        "CustomPDF": {
+          "additionalProperties": {},
+          "type": "object"
+        },
+        "CustomUIAssets": {
+          "items": {
+            "$ref": "#/definitions/CustomAssetState"
+          },
+          "type": "array"
+        },
+        "DeckIDs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "Description": {
+          "type": "string"
+        },
+        "FogColor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "FogHidePointers": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "FogOfWar": {
+          "$ref": "#/definitions/FogOfWarSaveState"
+        },
+        "FogOfWarRevealer": {
+          "$ref": "#/definitions/FogOfWarRevealerSaveState"
+        },
+        "FogReverseHiding": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "FogSeethrough": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "GMNotes": {
+          "type": "string"
+        },
+        "GUID": {
+          "type": "string"
+        },
+        "Grid": {
+          "description": "Object will snap to grid.",
+          "type": "boolean"
+        },
+        "GridProjection": {
+          "description": "Grid will project on this object.",
+          "type": "boolean"
+        },
+        "Hands": {
+          "description": "Object will enter player hands.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "HideWhenFaceDown": {
+          "description": "When face down object is question mark hidden.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "IgnoreFoW": {
+          "type": "boolean"
+        },
+        "JointFixed": {
+          "$ref": "#/definitions/JointFixedState"
+        },
+        "JointHinge": {
+          "$ref": "#/definitions/JointHingeState"
+        },
+        "JointSpring": {
+          "$ref": "#/definitions/JointSpringState"
+        },
+        "Layer": {
+          "description": "Sound Layer.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "Locked": {
+          "description": "Freeze object in place.",
+          "type": "boolean"
+        },
+        "LuaScript": {
+          "type": "string"
+        },
+        "LuaScriptState": {
+          "description": "Serialized running Lua code.",
+          "type": "string"
+        },
+        "MaterialIndex": {
+          "description": "0 = Plastic, 1 = Wood, 2 = Metal, 3 = Cardboard, 4 = Glass",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "type": "number"
+        },
+        "MeshIndex": {
+          "description": "Some objects can have multiple meshes.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "Mp3Player": {
+          "$ref": "#/definitions/Mp3PlayerState"
+        },
+        "Name": {
+          "description": "Internal object name.",
+          "type": "string"
+        },
+        "Nickname": {
+          "description": "Name supplied in game.",
+          "type": "string"
+        },
+        "Number": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "PhysicsMaterial": {
+          "$ref": "#/definitions/PhysicsMaterialState"
+        },
+        "RPGdead": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "RPGmode": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "Rigidbody": {
+          "$ref": "#/definitions/RigidbodyState"
+        },
+        "RotationValues": {
+          "description": "Rotation values are tooltip values tied to rotations.",
+          "items": {},
+          "type": "array"
+        },
+        "SidewaysCard": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "Snap": {
+          "description": "Object will snap to snap points",
+          "type": "boolean"
+        },
+        "States": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ObjectState"
+          },
+          "description": "Objects can have multiple states which can be swapped between.",
+          "type": "object"
+        },
+        "Sticky": {
+          "description": "When picked up objects above this one will be attached to it.",
+          "type": "boolean"
+        },
+        "Tablet": {
+          "$ref": "#/definitions/TabletState"
+        },
+        "Text": {
+          "$ref": "#/definitions/TextState"
+        },
+        "Tooltip": {
+          "description": "When hovering object will display tooltips.",
+          "type": "boolean"
+        },
+        "Transform": {
+          "$ref": "#/definitions/TransformState"
+        },
+        "XmlUI": {
+          "description": "Custom Xml UI.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "Name",
+        "Transform",
+        "Nickname",
+        "Description",
+        "GMNotes",
+        "IgnoreFoW",
+        "ColorDiffuse",
+        "Locked",
+        "Grid",
+        "Snap",
+        "Autoraise",
+        "Sticky",
+        "Tooltip"
+      ],
+      "type": "object"
+    },
+    "PhysicsMaterialState": {
+      "additionalProperties": false,
+      "properties": {
+        "BounceCombine": {
+          "description": "How the friction of two colliding objects is combined. 0 = Average, 1 = Minimum, 2 = Maximum, 3 = Multiply.",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "type": "number"
+        },
+        "Bounciness": {
+          "description": "How bouncy is the surface? A value of 0 will not bounce. A value of 1 will bounce without any loss of energy.",
+          "type": "number"
+        },
+        "DynamicFriction": {
+          "description": "The friction used when already moving. Usually a value from 0 to 1. A value of zero feels like ice, a value of 1 will make it come to rest very quickly unless a lot of force or gravity pushes the object.",
+          "type": "number"
+        },
+        "FrictionCombine": {
+          "description": "How the friction of two colliding objects is combined. 0 = Average, 1 = Minimum, 2 = Maximum, 3 = Multiply.",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "type": "number"
+        },
+        "StaticFriction": {
+          "description": "The friction used when an object is laying still on a surface. Usually a value from 0 to 1. A value of zero feels like ice, a value of 1 will make it very hard to get the object moving.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "StaticFriction",
+        "DynamicFriction",
+        "Bounciness",
+        "FrictionCombine",
+        "BounceCombine"
+      ],
+      "type": "object"
+    },
+    "RigidbodyState": {
+      "additionalProperties": false,
+      "properties": {
+        "AngularDrag": {
+          "description": "How much air resistance affects the object when rotating from torque. 0 means no air resistance. Note that you cannot make the object stop rotating just by setting its Angular Drag to infinity.",
+          "type": "number"
+        },
+        "Drag": {
+          "description": "How much air resistance affects the object when moving from forces. 0 means no air resistance, and infinity makes the object stop moving immediately.",
+          "type": "number"
+        },
+        "Mass": {
+          "description": "The mass of the object (arbitrary units). You should not make masses more or less than 100 times that of other Rigidbodies.",
+          "type": "number"
+        },
+        "UseGravity": {
+          "description": "If enabled, the object is affected by gravity.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "Mass",
+        "Drag",
+        "AngularDrag",
+        "UseGravity"
+      ],
+      "type": "object"
+    },
+    "SaveState": {
+      "additionalProperties": false,
+      "properties": {
+        "CameraStates": {
+          "description": "Saved camera positions.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/CameraState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "CustomUIAssets": {
+          "items": {
+            "$ref": "#/definitions/CustomAssetState"
+          },
+          "type": "array"
+        },
+        "Date": {
+          "type": "string"
+        },
+        "DecalPallet": {
+          "description": "Decals that can be placed in the world.",
+          "items": {
+            "$ref": "#/definitions/CustomDecalState"
+          },
+          "type": "array"
+        },
+        "Decals": {
+          "description": "Decals not attached to objects.",
+          "items": {
+            "$ref": "#/definitions/DecalState"
+          },
+          "type": "array"
+        },
+        "GameMode": {
+          "type": "string"
+        },
+        "Gravity": {
+          "type": "number"
+        },
+        "Grid": {
+          "$ref": "#/definitions/GridState"
+        },
+        "Hands": {
+          "$ref": "#/definitions/HandsState"
+        },
+        "Lighting": {
+          "$ref": "#/definitions/LightingState"
+        },
+        "LuaScript": {
+          "type": "string"
+        },
+        "LuaScriptState": {
+          "type": "string"
+        },
+        "MusicPlayer": {},
+        "Note": {
+          "type": "string"
+        },
+        "ObjectStates": {
+          "description": "Objects on the table.",
+          "items": {
+            "$ref": "#/definitions/ObjectState"
+          },
+          "type": "array"
+        },
+        "PlayArea": {
+          "type": "number"
+        },
+        "Rules": {
+          "type": "string"
+        },
+        "SaveName": {
+          "type": "string"
+        },
+        "Sky": {
+          "type": "string"
+        },
+        "SkyURL": {
+          "description": "URL or empty string",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "SnapPoints": {
+          "description": "Snap points not attached to objects.",
+          "items": {
+            "$ref": "#/definitions/SnapPointState"
+          },
+          "type": "array"
+        },
+        "TabStates": {
+          "additionalProperties": {
+            "$ref": "#/definitions/TabState"
+          },
+          "description": "Notepad tabs",
+          "type": "object"
+        },
+        "Table": {
+          "type": "string"
+        },
+        "TableURL": {
+          "description": "URL or empty string",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Turns": {
+          "$ref": "#/definitions/TurnsState"
+        },
+        "VectorLines": {
+          "description": "Vector lines on canvas 0 (table + beyond).",
+          "items": {
+            "$ref": "#/definitions/VectorLineState"
+          },
+          "type": "array"
+        },
+        "VersionNumber": {
+          "type": "string"
+        },
+        "XmlUI": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "SaveName",
+        "GameMode",
+        "Gravity",
+        "PlayArea",
+        "Date",
+        "Table",
+        "Sky",
+        "Rules",
+        "XmlUI",
+        "LuaScript",
+        "LuaScriptState",
+        "Grid",
+        "Lighting",
+        "Hands",
+        "Turns",
+        "ObjectStates",
+        "DecalPallet",
+        "TabStates",
+        "VersionNumber"
+      ],
+      "type": "object"
+    },
+    "SnapPointState": {
+      "additionalProperties": false,
+      "properties": {
+        "Position": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "Rotation": {
+          "$ref": "#/definitions/VectorState"
+        }
+      },
+      "required": [
+        "Position"
+      ],
+      "type": "object"
+    },
+    "TabState": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "id": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "visibleColor": {
+          "$ref": "#/definitions/ColourState"
+        }
+      },
+      "required": [
+        "title",
+        "body",
+        "color",
+        "visibleColor",
+        "id"
+      ],
+      "type": "object"
+    },
+    "TabletState": {
+      "additionalProperties": false,
+      "properties": {
+        "PageURL": {
+          "description": "URL or empty string",
+          "type": "string"
+        }
+      },
+      "required": [
+        "PageURL"
+      ],
+      "type": "object"
+    },
+    "TextState": {
+      "additionalProperties": false,
+      "properties": {
+        "Text": {
+          "type": "string"
+        },
+        "colorstate": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "fontSize": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "Text",
+        "colorstate",
+        "fontSize"
+      ],
+      "type": "object"
+    },
+    "TransformState": {
+      "additionalProperties": false,
+      "properties": {
+        "posX": {
+          "type": "number"
+        },
+        "posY": {
+          "type": "number"
+        },
+        "posZ": {
+          "type": "number"
+        },
+        "rotX": {
+          "type": "number"
+        },
+        "rotY": {
+          "type": "number"
+        },
+        "rotZ": {
+          "type": "number"
+        },
+        "scaleX": {
+          "type": "number"
+        },
+        "scaleY": {
+          "type": "number"
+        },
+        "scaleZ": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "posX",
+        "posY",
+        "posZ",
+        "rotX",
+        "rotY",
+        "rotZ",
+        "scaleX",
+        "scaleY",
+        "scaleZ"
+      ],
+      "type": "object"
+    },
+    "TurnsState": {
+      "additionalProperties": false,
+      "properties": {
+        "DisableInteractions": {
+          "type": "boolean"
+        },
+        "Enable": {
+          "type": "boolean"
+        },
+        "PassTurns": {
+          "type": "boolean"
+        },
+        "Reverse": {
+          "type": "boolean"
+        },
+        "SkipEmpty": {
+          "type": "boolean"
+        },
+        "TurnColor": {
+          "type": "string"
+        },
+        "TurnOrder": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "Type": {
+          "description": "0 = Auto = turn order is based on positioning of hands on around table, 1 = Custom = turn order is based on an user color list.",
+          "enum": [
+            0,
+            1
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "Enable",
+        "Type",
+        "TurnOrder",
+        "Reverse",
+        "SkipEmpty",
+        "PassTurns"
+      ],
+      "type": "object"
+    },
+    "VectorLineState": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/ColourState"
+        },
+        "loop": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "points3": {
+          "items": {
+            "$ref": "#/definitions/VectorState"
+          },
+          "type": "array"
+        },
+        "rotation": {
+          "$ref": "#/definitions/VectorState"
+        },
+        "square": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "thickness": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "points3",
+        "color",
+        "thickness",
+        "rotation"
+      ],
+      "type": "object"
+    },
+    "VectorState": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "type": "object"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {map, Observable} from "rxjs";
-import {JSONValue} from "../misc";
+import {SaveState} from "../types/ttstypes";
 
 @Injectable({
   providedIn: 'root'
@@ -10,8 +10,12 @@ export class IoService {
   private http = inject(HttpClient);
   private api = "http://localhost:3000/api"
 
-  public getSaveFile(path: string): Observable<JSONValue> {
-    return this.http.get<JSONValue>(`${this.api}/savefile`, {params: {path}});
+  public getSaveFile(path: string): Observable<SaveState> {
+    return this.http.get<unknown>(`${this.api}/savefile`, {params: {path}}).pipe(map(value => {
+        // FIXME: validation
+        return value as SaveState;
+      })
+    );
   }
 
   public getDirectory(path: string): Observable<string[]> {

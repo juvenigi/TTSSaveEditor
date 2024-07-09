@@ -1,13 +1,11 @@
 import {Component, inject} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {ActivatedRoute, Router} from "@angular/router";
-import {filter, firstValueFrom, map, Observable} from "rxjs";
+import {map} from "rxjs";
 import {AsyncPipe, NgTemplateOutlet} from "@angular/common";
 import {NgLetModule} from "ng-let";
-import {selectSaveRaw, selectTabletopSave} from "../../store/savefile/savefile.selector";
-import {SaveFile} from "../../store/savefile/savefile.models";
-import {SaveState} from "../../types/ttstypes";
-import {JSONValue} from "../../misc";
+import {selectFlattenedObjects, selectSavefileHeader} from "../../store/savefile/savefile.selector";
+import {requiredFilter} from "../../utils/rxjs.utils";
 
 @Component({
   selector: 'app-save-file-page',
@@ -21,13 +19,12 @@ import {JSONValue} from "../../misc";
   styleUrl: './save-file.page.component.css'
 })
 export class SaveFilePageComponent {
-
   private readonly store = inject(Store)
-  private readonly route = inject(ActivatedRoute).snapshot;
-  private readonly router = inject(Router);
 
-  raw$: Observable<JSONValue> = this.store.select(selectSaveRaw).pipe(map((save: SaveFile) => save.saveData));
-  saveState$ = this.store.select(selectTabletopSave).pipe(
-    filter((saveState): saveState is SaveState => saveState !== undefined)
-  );
+  saveState$ = this.store.select(selectSavefileHeader).pipe(requiredFilter());
+
+  private flat$ = this.store.select(selectFlattenedObjects).pipe(requiredFilter());
+  flatObjects$ = this.flat$.pipe(map(({objects}) => objects));
+  parentOf$ = this.flat$.pipe(map(({parentOf}) => parentOf));
+  pathMap$ = this.flat$.pipe(map(({pathMap})=>pathMap));
 }

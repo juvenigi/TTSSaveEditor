@@ -1,15 +1,23 @@
 import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {AsyncPipe, NgClass} from "@angular/common";
-import {debounceTime, distinctUntilChanged, firstValueFrom, map, Unsubscribable, withLatestFrom} from "rxjs";
-import {ActivatedRoute, Router} from "@angular/router";
+import {debounceTime, distinctUntilChanged, filter, firstValueFrom, map, Unsubscribable, withLatestFrom} from "rxjs";
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterState
+} from "@angular/router";
 import {NgLetModule} from "ng-let";
 import {selectSaveName} from "../../store/savefile/savefile.selector";
 import {selectRootPath} from "../../store/directory/directory.selector";
-import {SAVEFILE_ROUTE} from "../../app.routes";
 import {NgbCollapse} from "@ng-bootstrap/ng-bootstrap";
 import {DirectoryApiActions} from "../../store/directory/directory.actions";
 import {FormControl, ReactiveFormsModule} from "@angular/forms";
+import {instanceOfFilter} from "../../utils/rxjs.utils";
 
 @Component({
   selector: 'app-header',
@@ -19,7 +27,9 @@ import {FormControl, ReactiveFormsModule} from "@angular/forms";
     NgClass,
     NgLetModule,
     NgbCollapse,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterLink,
+    RouterLinkActive
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'
@@ -31,9 +41,11 @@ export class HeaderComponent implements OnDestroy {
   private subscriptions: Unsubscribable [] = [];
   saveName$ = this.store.select(selectSaveName);
   rootPath$ = this.store.select(selectRootPath);
-  saveFileActive$ = this.route.url.pipe(map(segments =>
-    segments.findIndex(segment => segment.path === SAVEFILE_ROUTE) !== -1
-  ));
+  currentPath$ = this.router.events.pipe(
+      instanceOfFilter(NavigationEnd),
+      map((event) => event.urlAfterRedirects)
+    );
+
 
   rootDirForm: FormControl<string> = new FormControl<string>("", {nonNullable: true});
   rootDirSelectorCollapsed = true;
@@ -45,12 +57,12 @@ export class HeaderComponent implements OnDestroy {
   private async setupForm() {
     this.subscriptions.push(
       this.rootPath$.subscribe(update => {
-        this.rootDirSelectorCollapsed = ((update ?? '').length > 0);
+        this.rootDirSelectorCollapsed = (update ?? '').length ===0?  false : this.rootDirSelectorCollapsed;
         this.rootDirForm.patchValue(update ?? '', {emitEvent: false});
         this.rootDirForm.markAsPristine({emitEvent: false})
       }),
       this.rootDirForm.valueChanges
-        .pipe(distinctUntilChanged(), debounceTime(3000), withLatestFrom(this.rootPath$))
+        .pipe(distinctUntilChanged(), debounceTime(400), withLatestFrom(this.rootPath$))
         .subscribe(([rootPath, oldRootPath]) => {
           console.debug(rootPath);
 
@@ -58,7 +70,6 @@ export class HeaderComponent implements OnDestroy {
             this.store.dispatch(DirectoryApiActions.requestDirectory({rootPath}))
             void this.router.navigate(['directory']);
           }
-          this.rootDirSelectorCollapsed = false;
         })
     );
   }
@@ -69,5 +80,9 @@ export class HeaderComponent implements OnDestroy {
 
   navigateToDirectory() {
     void this.router.navigate(['directory']);
+  }
+
+  onSubmit(event: Event) {
+    this.rootDirSelectorCollapsed = true;
   }
 }

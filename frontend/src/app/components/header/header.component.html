@@ -1,27 +1,32 @@
-<nav class="navbar navbar-expand bg-body-tertiary p-3 shadow gap-4">
-  <!-- directory selection input toggle -->
-  <button role="button"
-          class="btn"
-          [ngClass]="rootDirSelectorCollapsed? 'btn-outline-primary':'btn-primary'"
-          (click)="collapse.toggle()"
-  ><i class="bi bi-folder"></i></button>
-  <!-- navigate to directory entries page -->
-  <button role="button"
-          class="btn"
-          [ngClass]="(saveFileActive$ | async)? 'btn-primary': 'btn-outline-primary'"
-          (click)="navigateToDirectory()"
-  ><i class="bi bi-list-columns"></i></button>
-  <!-- navigate to active element -->
-  @if (saveName$ | async; as saveName; ) {
+@if (currentPath$ | async; as path) {
+  <nav class="navbar navbar-expand bg-body-tertiary p-3 shadow gap-4">
+    <!-- directory selection input toggle -->
     <button role="button"
             class="btn"
-            [ngClass]="!(saveFileActive$ | async)? 'btn-primary': 'btn-outline-primary'"
-    >{{ saveName }}
-    </button>
-  }
-</nav>
-<div #collapse="ngbCollapse" [(ngbCollapse)]="rootDirSelectorCollapsed">
-  <div class="card">
-    <input [formControl]="rootDirForm" placeholder="Please provide Tabletop Simulator Save directory, then press [ENTER] to confirm">
+            [ngClass]="rootDirSelectorCollapsed? 'btn-outline-primary':'btn-primary'"
+            (click)="collapse.toggle()"
+    ><i class="bi bi-folder"></i></button>
+    <!-- navigate to directory entries page -->
+    <button role="button"
+            class="btn"
+            routerLink="/directory"
+            [ngClass]="path === '/directory'? 'btn-primary': 'btn-outline-primary'"
+    ><i class="bi bi-list-columns"></i></button>
+    <!-- navigate to active element -->
+    @if (saveName$ | async; as saveName; ) {
+      <button role="button"
+              class="btn"
+              routerLink="/savefile"
+              [ngClass]="path === '/savefile'? 'btn-primary': 'btn-outline-primary'"
+      >{{ saveName }}
+      </button>
+    }
+  </nav>
+  <div #collapse="ngbCollapse" [(ngbCollapse)]="rootDirSelectorCollapsed">
+    <div class="input-group">
+      <label class="input-group-text">TTS Saves </label>
+      <input class="form-control" [formControl]="rootDirForm" (keydown.enter)="onSubmit($event)"
+             placeholder="full path required, press [ENTER] to close">
+    </div>
   </div>
-</div>
+}
