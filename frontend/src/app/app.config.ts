@@ -4,16 +4,20 @@ import {provideRouter} from '@angular/router';
 import {routes} from './app.routes';
 import {provideStore, StoreModule} from '@ngrx/store';
 import {provideEffects} from '@ngrx/effects';
-import {AppEffects} from "./store/app.effects";
+import {SavefileEffects} from "./store/savefile/savefile.effects";
 import {provideHttpClient} from "@angular/common/http";
-import {reducer, reducerFeatureKey} from "./store/app.reducer";
+import {savefileReducer, savefileReducerKey} from "./store/savefile/savefile.reducer";
+import {provideRouterStore} from '@ngrx/router-store';
+import {directoryReducer, directoryReducerKey} from "./store/directory/directory.reducer";
+import {DirectoryEffects} from "./store/directory/directory.effects";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({eventCoalescing: true}),
     provideRouter(routes),
-    provideStore({[reducerFeatureKey]: reducer}),
-    provideEffects(AppEffects),
+    provideStore({[savefileReducerKey]: savefileReducer, [directoryReducerKey]: directoryReducer}),
+    provideEffects(SavefileEffects, DirectoryEffects),
     provideHttpClient(),
+    provideRouterStore()
   ],
 };

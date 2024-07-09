@@ -1,0 +1,44 @@
+<div class="container p-5">
+<div>Note: if nothing in displayed, you have no decks</div>
+@if (saveState$ | async; as save) {
+  <h1>{{ save.Date + ' ' + save.SaveName }}</h1>
+  <h2>{{ 'date: ' + save.Date }}</h2>
+  @for (object of save.ObjectStates; track $index) {
+    @if (object.ContainedObjects) {
+      <div>{{ 'Container ' + object.GUID }}</div>
+      <div>{{ object.DeckIDs }}</div>
+      @for (contained of object.ContainedObjects; track $index) {
+        <div>{{ 'guid:' + contained?.GUID }}</div>
+        <div>script</div>
+        <div>{{ contained?.LuaScript }}</div>
+        <div>state</div>
+        <div>{{ contained?.LuaScriptState }}</div>
+      }
+    } @else {
+<!--      <div>{{ 'guid:' + object.GUID }}</div>-->
+<!--      <div>script</div>-->
+<!--      <div>{{ object.LuaScript }}</div>-->
+<!--      <div>state</div>-->
+<!--      <div>{{ object.LuaScriptState }}</div>-->
+    }
+  } @empty {
+    <i>no objects... savefile corrupted?</i>
+  }
+
+} @else {
+  <i>loading save...</i>
+}
+</div>
+<ng-template #ttsObject let-tobject>
+  <div>{{ 'guid:' + tobject?.GUID }}</div>
+  <div>script</div>
+  <div>{{ tobject?.LuaScript }}</div>
+  <div>state</div>
+  <div>{{ tobject?.LuaScriptState }}</div>
+</ng-template>
+
+<!--@if (raw$|async; as page) {-->
+<!--  <div>{{ page }}</div>-->
+<!--} @else {-->
+<!--  <i>loading save...</i>-->
+<!--}-->

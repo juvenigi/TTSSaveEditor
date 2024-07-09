@@ -1,7 +1,27 @@
 <nav class="navbar navbar-expand bg-body-tertiary p-3 shadow gap-4">
-  <!-- todo: spawn modal to confirm directory change -->
-  <button role="button" class="btn btn-outline-secondary"><i class="bi bi-gear"></i></button>
-  <button class="btn btn-outline-primary" role="button">Saves</button>
-  <button class="btn btn-outline-primary" role="button">Edit XYZ</button>
-  <button class="btn btn-outline-primary" role="button"><i class="bi bi-plus-lg"></i></button>
+  <!-- directory selection input toggle -->
+  <button role="button"
+          class="btn"
+          [ngClass]="rootDirSelectorCollapsed? 'btn-outline-primary':'btn-primary'"
+          (click)="collapse.toggle()"
+  ><i class="bi bi-folder"></i></button>
+  <!-- navigate to directory entries page -->
+  <button role="button"
+          class="btn"
+          [ngClass]="(saveFileActive$ | async)? 'btn-primary': 'btn-outline-primary'"
+          (click)="navigateToDirectory()"
+  ><i class="bi bi-list-columns"></i></button>
+  <!-- navigate to active element -->
+  @if (saveName$ | async; as saveName; ) {
+    <button role="button"
+            class="btn"
+            [ngClass]="!(saveFileActive$ | async)? 'btn-primary': 'btn-outline-primary'"
+    >{{ saveName }}
+    </button>
+  }
 </nav>
+<div #collapse="ngbCollapse" [(ngbCollapse)]="rootDirSelectorCollapsed">
+  <div class="card">
+    <input [formControl]="rootDirForm" placeholder="Please provide Tabletop Simulator Save directory, then press [ENTER] to confirm">
+  </div>
+</div>

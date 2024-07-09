@@ -1,0 +1,5 @@
+@for (item of savefiles$ | async; track $index; let i = $index) {
+  <div (click)="onSelect(item)">{{ item }}</div>
+} @empty {
+  <i>no items</i>
+}
