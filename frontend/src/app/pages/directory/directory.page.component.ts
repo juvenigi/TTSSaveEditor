@@ -21,12 +21,18 @@ import {DirectoryApiActions} from "../../store/directory/directory.actions";
 export class DirectoryPageComponent {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-  savefiles$: Observable<string[]> = this.store.select(selectDirectoryState)
-    .pipe(map((dir: Directory) => dir.directoryEntries));
+  private directoryState$ = this.store.select(selectDirectoryState);
+  savefiles$: Observable<string[]> = this.directoryState$.pipe(
+    map((dir: Directory) => dir.directoryEntries)
+  );
 
   relFolders$: Observable<string[]> = this.store.select(selectRelDirectories)
 
   pathMask$: Observable<string> = this.store.select(selectPathMask);
+
+  constructor() {
+
+  }
 
   onSelect(path: string) {
     this.store.dispatch(SaveFileApiActions.requestSavefileByPath({path}))

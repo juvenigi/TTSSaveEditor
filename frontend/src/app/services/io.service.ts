@@ -18,13 +18,7 @@ export class IoService {
     );
   }
 
-  public getDirectory(path: string): Observable<string[]> {
-    return this.http.get<any>(`${this.api}/directory`, {params: {path}}).pipe(
-      map(res => {
-        if (!(res != null && typeof res[Symbol.iterator] === 'function')) {
-          return [];
-        }
-        return res.map((entry: any) => entry.path.toString() ?? "").filter((str: string) => str.length > 0)
-      }));
-  }
+  public getDirectory(path: string) {
+    return this.http.get<{ path: string, entries: Array<{ path: string }> }>(`${this.api}/directory`, {params: {path}})
+  };
 }

@@ -2,6 +2,7 @@ package rest
 
 import (
 	"TTSBundler/backend/service"
+	"TTSBundler/backend/util"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 )
@@ -14,6 +15,14 @@ func registerRoutes(app *fiber.App) {
 
 func handleGetDirectory(ctx *fiber.Ctx) error {
 	path := ctx.Query("path")
+	if len(path) == 0 {
+		if def, err := util.GetDefaultTTSAbsPath(); err == nil {
+			path = def
+		} else {
+			log.Error(err)
+		}
+	}
+
 	log.Infof("requesting path: %s", path)
 	data, err := service.GetEntries(path)
 	if err != nil {

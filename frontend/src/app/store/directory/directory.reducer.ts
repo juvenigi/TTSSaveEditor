@@ -10,6 +10,7 @@ export const directoryReducer = createReducer(
     return {...state, loadingState: state.rootPath !== rootPath ? 'LOADING' : state.loadingState} satisfies Directory;
   }),
   on(DirectoryApiActions.directorySuccessResponse, (_: Directory, {directory}) => {
+    console.debug(directory);
     return directory;
   }),
   on(DirectoryApiActions.navigateToFolder, (state, {folder}) => {

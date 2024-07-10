@@ -23,6 +23,11 @@ func GetSaveJson(path string) ([]byte, error) {
 	}
 }
 
+type DirectoryResponse struct {
+	Path    string             `json:"path"`
+	Entries []domain.SaveEntry `json:"entries"`
+}
+
 func GetEntries(path string) ([]byte, error) {
 	if path != "" {
 		err := tt.ScanPathForSaves(path)
@@ -30,5 +35,8 @@ func GetEntries(path string) ([]byte, error) {
 			return nil, err
 		}
 	}
-	return json.Marshal(tt.GetSaves())
+	return json.Marshal(DirectoryResponse{
+		Path:    path,
+		Entries: tt.GetSaves(),
+	})
 }
