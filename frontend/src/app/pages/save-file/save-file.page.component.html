@@ -1,5 +1,4 @@
 <div class="container p-5">
-  <div>Note: if nothing in displayed, you have no decks</div>
   @if (saveState$ | async; as save) {
     <h1>{{ save.name }}</h1>
     <h2>{{ 'date: ' + save.date }}</h2>
@@ -8,18 +7,44 @@
     <i>loading save...</i>
   }
 
-  <div class="row">
+  <div class="row mt-2 mb-1">
     <input type="text" [formControl]="objectSearch">
   </div>
+  <div class="row mb-2">
+    <button type="button" class="btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i></button>
+    @for (collectionRef of collections$ | async; track $index) {
+      @if (collectionRef.object; as collection) {
+        @if(collection.Nickname.trim().length>0) {
+          <button class="col btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
+          >{{ collection.Nickname }}
+            <span class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
+          </button>
+        } @else {
+          <button class="col btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
+          ><i>{{ collection.Name }}</i>
+            <span class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
+          </button>
+        }
+      }
+    }
+  </div>
+
+  <!-- header end, card list -->
+
   @if (cardForms$ | async; as cardInputs) {
-    @for (object of flatObjects$ | async; track $index) {
-      <div>{{ 'GUID ' + object.object.GUID }}</div>
-      <div>{{ ' Name ' + object.object.Name + ' ' + object.object.Nickname }}</div>
-      @if (cardInputs.get(object.jsonRelPath.join('/')); as form) {
-        <app-custom-card-editor [form]="form"/>
+    @for (cardRef of cards$ | async; track $index) {
+      @if(cardRef.object; as card) {
+        <div>{{ 'GUID ' + card.GUID }}</div>
+        <div>{{ ' Name ' + card.Name + ' ' + card.Nickname }}</div>
+        @if (cardInputs.get(cardRef.jsonRelPath.join('/')); as form) {
+          <app-custom-card-editor [form]="form"/>
+        }
       }
     } @empty {
       <i>savefile contains no objects</i>
     }
   }
+
+  <!-- new card creator -->
+
 </div>

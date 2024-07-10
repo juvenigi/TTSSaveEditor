@@ -45,6 +45,8 @@ function locateObjectRecur(
   });
 }
 
+export type GameCardFormControl = Exclude<ReturnType<typeof tryCardInit>, undefined>;
+
 export function tryCardInit(object: ObjectState) {
   const isCardLike = ['Card', 'CardCustom'].includes(object.Name);
   if (!isCardLike) return undefined;

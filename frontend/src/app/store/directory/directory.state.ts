@@ -12,3 +12,7 @@ export const initialDirectoryState: Directory = {
   directoryEntries: [],
   loadingState: "PENDING"
 }
+
+export function deduceDividerStyle(state:Directory ) {
+  return (state.rootPath ?? '\\').includes('\\')? '\\' : '/';
+}

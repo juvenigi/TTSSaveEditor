@@ -1,7 +1,9 @@
 import {createFeatureSelector, createReducer, on} from "@ngrx/store";
 import {DirectoryApiActions, IOActions} from "./directory.actions";
-import {Directory, initialDirectoryState} from "./directory.state";
+import {deduceDividerStyle, Directory, initialDirectoryState} from "./directory.state";
 
+export const directoryReducerKey = 'directoryReducer';
+export const selectDirectoryState = createFeatureSelector<Directory>(directoryReducerKey);
 export const directoryReducer = createReducer(
   initialDirectoryState,
   on(DirectoryApiActions.requestDirectory, (state: Directory, {rootPath}) => {
@@ -11,7 +13,7 @@ export const directoryReducer = createReducer(
     return directory;
   }),
   on(DirectoryApiActions.navigateToFolder, (state, {folder}) => {
-    const div = '\\';
+    const div = deduceDividerStyle(state);
     const upDir = folder === ".."
     let segments = state.relPath.split(div);
     segments = segments.slice(0, upDir ? -1 : undefined);
@@ -32,5 +34,3 @@ export const directoryReducer = createReducer(
     } satisfies Directory;
   })
 )
-export const directoryReducerKey = 'directoryReducer';
-export const selectDirectoryState = createFeatureSelector<Directory>(directoryReducerKey);

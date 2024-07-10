@@ -1,5 +1,4 @@
 import {createFeatureSelector, createReducer, on} from "@ngrx/store";
-import {SaveFile} from "../savefile/savefile.state";
 import {initialSearchFilterState, SearchFilter} from "./search-filter.state";
 import {SearchFilterActions} from "./search-filter.actions";
 

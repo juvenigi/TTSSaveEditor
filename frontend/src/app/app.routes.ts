@@ -7,11 +7,9 @@ import {selectSaveLoadingState} from "./store/savefile/savefile.selector";
 import {firstValueFrom} from "rxjs";
 
 export const unloadedSaveGuard: CanActivateFn = async (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
-  const loadingState = await firstValueFrom(inject(Store).select(selectSaveLoadingState))
-
-  return !['PENDING', 'FAILED'].some(i => i === loadingState);
+  return await firstValueFrom(inject(Store).select(selectSaveLoadingState))
+    .then((state: "DONE" | "LOADING" | "PENDING" | "FAILED") => !['PENDING', 'FAILED'].includes(state));
 }
-
 
 export const routes: Routes = [
   {path: "directory", pathMatch: "full", component: DirectoryPageComponent},
