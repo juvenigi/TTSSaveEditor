@@ -36,7 +36,36 @@ Diagram:
 - [ ] wire IO events
 - [ ] quill.js textarea?
 - [ ] backend: patch savefile json (individual cards, entire decks)
+```go
+package main 
 
+import (
+"fmt"
+jsonpatch "github.com/evanphx/json-patch"
+"log"
+)
+
+func main() {
+	original := []byte(`{"nested": [1,2,3,4]}`)
+	patchJSON := []byte(`[
+		
+		{"op": "add", "path": "/nested/1", "value": {"different":1}}
+	]`)
+
+	patch, err := jsonpatch.DecodePatch(patchJSON)
+	if err != nil {
+		panic(err)
+	}
+
+	modified, err := patch.Apply(original)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Original document: %s\n", original)
+	fmt.Printf("Modified document: %s\n", modified)
+}
+```
 ## 06.07.2024
 
 ### progress
