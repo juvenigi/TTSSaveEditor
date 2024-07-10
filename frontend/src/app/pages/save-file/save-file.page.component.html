@@ -8,16 +8,18 @@
     <i>loading save...</i>
   }
 
-  <!--  @if (parentOf$ | async; as parentOf) {-->
-  <!--    @if (pathMap$ | async; as pathMap) {-->
-  @for (object of flatObjects$ | async; track $index) {
-    <div>{{ 'GUID ' + object.GUID }}</div>
-    <div>{{ 'scriptState: ' + object.LuaScriptState ?? 'no script' }}</div>
-    <!--        <div>{{ 'parent: ' + parentOf.get(object)?.GUID ?? 'none' }}</div>-->
-      <!--        <div>{{ 'path: ' + pathMap.get(object) ?? 'unknown' }}</div>-->
-  } @empty {
-    <i>no objects... savefile corrupted?</i>
+  <div class="row">
+    <input type="text" [formControl]="objectSearch">
+  </div>
+  @if (cardForms$ | async; as cardInputs) {
+    @for (object of flatObjects$ | async; track $index) {
+      <div>{{ 'GUID ' + object.object.GUID }}</div>
+      <div>{{ ' Name ' + object.object.Name + ' ' + object.object.Nickname }}</div>
+      @if (cardInputs.get(object.jsonRelPath.join('/')); as form) {
+        <app-custom-card-editor [form]="form"/>
+      }
+    } @empty {
+      <i>savefile contains no objects</i>
+    }
   }
-  <!--    }-->
-  <!--  }-->
 </div>

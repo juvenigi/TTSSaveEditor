@@ -42,9 +42,9 @@ export class HeaderComponent implements OnDestroy {
   saveName$ = this.store.select(selectSaveName);
   rootPath$ = this.store.select(selectRootPath);
   currentPath$ = this.router.events.pipe(
-      instanceOfFilter(NavigationEnd),
-      map((event) => event.urlAfterRedirects)
-    );
+    instanceOfFilter(NavigationEnd),
+    map((event) => event.urlAfterRedirects)
+  );
 
 
   rootDirForm: FormControl<string> = new FormControl<string>("", {nonNullable: true});
@@ -57,15 +57,13 @@ export class HeaderComponent implements OnDestroy {
   private async setupForm() {
     this.subscriptions.push(
       this.rootPath$.subscribe(update => {
-        this.rootDirSelectorCollapsed = (update ?? '').length ===0?  false : this.rootDirSelectorCollapsed;
+        this.rootDirSelectorCollapsed = (update ?? '').length === 0 ? false : this.rootDirSelectorCollapsed;
         this.rootDirForm.patchValue(update ?? '', {emitEvent: false});
         this.rootDirForm.markAsPristine({emitEvent: false})
       }),
       this.rootDirForm.valueChanges
         .pipe(distinctUntilChanged(), debounceTime(400), withLatestFrom(this.rootPath$))
         .subscribe(([rootPath, oldRootPath]) => {
-          console.debug(rootPath);
-
           if (rootPath.length > 0 && rootPath !== (oldRootPath ?? '')) {
             this.store.dispatch(DirectoryApiActions.requestDirectory({rootPath}))
             void this.router.navigate(['directory']);

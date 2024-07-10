@@ -17,15 +17,6 @@ export const selectRelDirectories = createSelector(
       .filter(value => value && !value.includes('.'))
       .reduce((accum, value) => accum.add(value), new Set<string>())
     const up = state.relPath.length > 0 ? ['..'] : [];
-    console.debug(state.relPath)
-    console.debug(state.directoryEntries
-      .map(entry => entry.slice(rootLength, entry.length))
-      .filter(entry => entry.includes(state.relPath)))
-    console.debug(state.directoryEntries
-      .map(entry => entry.slice(rootLength, entry.length))
-      .filter(entry => entry.includes(state.relPath))
-      .map(entry => entry.slice(state.relPath.length)))
-    console.debug([...up, ...folders])
     return [...up, ...folders];
   }
 );

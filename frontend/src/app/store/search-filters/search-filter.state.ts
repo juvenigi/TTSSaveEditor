@@ -1,9 +1,9 @@
-export interface SeachFilter {
+export interface SearchFilter {
   jsonPath: number[],
   search: string
 }
 
-export const initialSearchFilterState: SeachFilter = {
+export const initialSearchFilterState: SearchFilter = {
   jsonPath: [],
   search: ""
 }

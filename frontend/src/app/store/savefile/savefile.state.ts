@@ -1,4 +1,5 @@
 import {ObjectState, SaveState} from "../../types/ttstypes";
+import {FormControl} from "@angular/forms";
 
 export interface SaveFile {
   path: string
@@ -42,4 +43,17 @@ function locateObjectRecur(
       return [wrappedObject, ...locateObjectRecur(obj.ContainedObjects, jsonRelPath)];
     }
   });
+}
+
+export function tryCardInit(object: ObjectState) {
+  const isCardLike = ['Card', 'CardCustom'].includes(object.Name);
+  if (!isCardLike) return undefined;
+  let cardText = '';
+  try {
+    cardText = JSON.parse(object.LuaScriptState ?? '[]')[0];
+  } catch (_) {
+
+  }
+  if (!cardText) return undefined;
+  return new FormControl<string>(cardText, {nonNullable: true});
 }
