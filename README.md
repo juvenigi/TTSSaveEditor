@@ -16,17 +16,17 @@ and load/edit your save files from there.
 
 ## Features / Implementation roadmap
 
-- [X] load tabletop savefile
-- [ ] edit objects of the tabletop savefile
-  - [ ] basic json editing
-  - [ ] simplified version
-- [ ] save tabletop files
-  - [ ] edit the savefile json
+- [X] load TTS SaveData
+- [ ] view and search Decks, Bags, and Card Objects
+- [ ] edit/save Cards
+  - [ ] edit an existing Card
+  - [ ] create a new Card / remove a Card
+- [ ] Cache currently open Save File
 - [ ] script hot reload / external editor api
-  - [ ] synchronisation / notification of divergent states in your game/ide/savefile
+  - [ ] sync / notify of divergent state in game/ide/savefile
 - [ ] script bundling / packaging tool
-  - [ ] enable creation of resuable APIs
-  - [ ] classloader for reducing size of tabletop savefiles
+  - [ ] standard lua import semantics
+- [ ] "Framework": ObjectPatcher / "Classloader" for reducing size of tabletop savefiles
 
 ## Build steps
 **Prerequsistes**
