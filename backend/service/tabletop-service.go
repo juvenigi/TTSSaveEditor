@@ -4,6 +4,7 @@ import (
 	"TTSBundler/backend/domain"
 	"encoding/json"
 	"errors"
+	jsonpatch "github.com/evanphx/json-patch"
 	"path/filepath"
 )
 
@@ -23,20 +24,41 @@ func GetSaveJson(path string) ([]byte, error) {
 	}
 }
 
-type DirectoryResponse struct {
-	Path    string             `json:"path"`
-	Entries []domain.SaveEntry `json:"entries"`
-}
-
 func GetEntries(path string) ([]byte, error) {
 	if path != "" {
 		err := tt.ScanPathForSaves(path)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, errors.New("invalid path")
 	}
-	return json.Marshal(DirectoryResponse{
+	return json.Marshal(domain.DirectoryResponse{
 		Path:    path,
 		Entries: tt.GetSaves(),
 	})
+}
+
+func PatchSavefile(path string, jsonp []byte) ([]byte, error) {
+	if path == "" {
+		return nil, errors.New("invalid path")
+	}
+	original, err := GetSaveJson(path)
+	if err != nil {
+		return nil, err
+	}
+	patch, err := jsonpatch.DecodePatch(jsonp)
+	if err != nil {
+		return nil, err
+	}
+	modified, err := patch.Apply(original)
+	if err != nil {
+		return nil, err
+	}
+	err = tt.BackupSaveFile(path, modified)
+	if err != nil {
+		return nil, err
+	}
+
+	return modified, nil
 }

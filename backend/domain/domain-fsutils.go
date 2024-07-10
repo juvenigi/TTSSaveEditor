@@ -33,7 +33,7 @@ func parseEntries(entries []os.DirEntry, currentDir string, visited map[string]b
 			continue
 		}
 		_ = file.Close()
-		saveFiles[fullPath] = &SaveFile{file: file, stale: true}
+		saveFiles[fullPath] = &SaveFile{stale: false}
 	}
 	return newQueue
 }

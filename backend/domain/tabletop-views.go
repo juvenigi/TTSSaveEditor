@@ -11,3 +11,8 @@ func (tt *Tabletop) GetSaves() []SaveEntry {
 	}
 	return entries
 }
+
+type DirectoryResponse struct {
+	Path    string      `json:"path"`
+	Entries []SaveEntry `json:"entries"`
+}

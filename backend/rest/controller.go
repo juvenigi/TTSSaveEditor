@@ -10,7 +10,34 @@ import (
 func registerRoutes(app *fiber.App) {
 	app.Static("/", "./res/angular/browser")
 	app.Get("/api/savefile", handleGetSavefile)
+	app.Patch("/api/savefile", handlePatchSavefile)
 	app.Get("/api/directory", handleGetDirectory)
+}
+
+func handlePatchSavefile(ctx *fiber.Ctx) error {
+	path := ctx.Query("path")
+	body := ctx.Body()
+	log.Infof("requesting path: %s", path)
+	if path == "" || body == nil {
+		if err := ctx.Status(fiber.StatusBadRequest).SendString("Bad Request"); err != nil {
+			return err
+		}
+		return nil
+	}
+	if jsonBytes, err := service.PatchSavefile(path, body); err != nil {
+		if err := ctx.Status(fiber.StatusBadRequest).SendString("Bad Request"); err != nil {
+			return err
+		}
+		return nil
+	} else {
+		if err := ctx.
+			Type("application/json", "UTF-8").
+			Send(jsonBytes); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func handleGetDirectory(ctx *fiber.Ctx) error {

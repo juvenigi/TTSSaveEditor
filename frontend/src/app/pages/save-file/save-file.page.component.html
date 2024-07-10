@@ -10,17 +10,17 @@
   <div class="row mt-2 mb-1">
     <input type="text" [formControl]="objectSearch">
   </div>
-  <div class="row mb-2">
-    <button type="button" class="btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i></button>
+  <div class="row mb-2 gap-1">
+    <button type="button" class="col-auto btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i></button>
     @for (collectionRef of collections$ | async; track $index) {
       @if (collectionRef.object; as collection) {
         @if(collection.Nickname.trim().length>0) {
-          <button class="col btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
+          <button class="col-auto btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
           >{{ collection.Nickname }}
             <span class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
           </button>
         } @else {
-          <button class="col btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
+          <button class="col-auto btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
           ><i>{{ collection.Name }}</i>
             <span class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
           </button>

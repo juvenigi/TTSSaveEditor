@@ -1,8 +1,12 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -14,7 +18,6 @@ type Tabletop struct {
 
 // SaveFile holds the byte data of a save file
 type SaveFile struct {
-	file     *os.File
 	saveData []byte
 	stale    bool
 }
@@ -83,4 +86,45 @@ func (tt *Tabletop) getSaveFromFS(path string) ([]byte, error) {
 	tt.rwLock.Unlock()
 
 	return data, nil
+}
+
+func (tt *Tabletop) BackupSaveFile(path string, data []byte) error {
+	save := tt.saves[path]
+	if save == nil {
+		return errors.New(path + " could not be found")
+	}
+	// backup previous file
+	dir, name := filepath.Split(path)
+	baknum := getLargestBakNum(dir)
+	err := os.WriteFile(filepath.Join(dir, fmt.Sprint(name, ".", baknum, ".bak")), save.saveData, 0666)
+	if err != nil {
+		return err
+	}
+	// write new file
+	err = os.WriteFile(path, data, 0666)
+	if err != nil {
+		return err
+	}
+	// update cache
+	save.saveData = data
+	save.stale = true
+	return nil
+}
+
+func getLargestBakNum(dir string) int {
+	largestBak := 0
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		segments := strings.Split(entry.Name(), ".")
+		slen := len(segments)
+		if slen > 4 && slen-2 > 0 {
+			bakNumStr := segments[slen-2]
+			num, err := strconv.ParseInt(bakNumStr, 10, 8)
+			if err != nil {
+				continue
+			}
+			largestBak = int(num)
+		}
+	}
+	return largestBak
 }

@@ -16,6 +16,25 @@ Diagram:
 
 # Journal
 
+## 10.07.2024 (after sleeping)
+
+## progress
+- worked mostly on functionality
+
+## complications
+- I think my backend code is showing some ugly sides (sloppy error-checking)
+- Add tests at some point
+
+## tasks
+- [X] return default directory if no path is specified
+- [X] list bags/decks of a savefile
+- [X] filter objects by bag
+- [ ] create a formGroup for a card
+  - font size / max characters autoformatter
+  - [ ] quill.js textarea? bbcode?
+- [ ] wire IO events
+- [X] backend: patch savefile json (individual cards, entire decks)
+
 ## 10.07.2024
 
 ## progress
@@ -29,13 +48,6 @@ Diagram:
 - `WARN` tabletop simulator save file is not validated (meaning that SaveData types are fictional / unverified)
 
 ## tasks
-- [ ] return default directory if no path is specified
-- [ ] list bags/decks of a savefile
-- [ ] filter objects by bag
-- [ ] create a formGroup for a card
-- [ ] wire IO events
-- [ ] quill.js textarea?
-- [ ] backend: patch savefile json (individual cards, entire decks)
 ```go
 package main 
 
