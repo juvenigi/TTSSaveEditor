@@ -58,10 +58,7 @@ func getSavefile(ctx *fiber.Ctx) error {
 	path := ctx.Query("path")
 	log.Infof("requesting path: %s", path)
 	if path == "" {
-		if err := ctx.Status(fiber.StatusBadRequest).SendString("Bad Request"); err != nil {
-			return err
-		}
-		return nil
+		return fiber.ErrBadRequest
 	}
 	if jsonBytes, err := service.GetSaveJson(path); err != nil {
 		return fiber.ErrInternalServerError
