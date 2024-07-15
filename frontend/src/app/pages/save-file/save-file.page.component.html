@@ -11,18 +11,21 @@
     <input type="text" [formControl]="objectSearch">
   </div>
   <div class="row mb-2 gap-1">
-    <button type="button" class="col-auto btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i></button>
+    <button type="button" class="col-auto btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i>
+    </button>
     @for (collectionRef of collections$ | async; track $index) {
       @if (collectionRef.object; as collection) {
-        @if(collection.Nickname.trim().length>0) {
+        @if (collection.Nickname.trim().length > 0) {
           <button class="col-auto btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
           >{{ collection.Nickname }}
-            <span class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
+            <span
+              class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
           </button>
         } @else {
           <button class="col-auto btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
           ><i>{{ collection.Name }}</i>
-            <span class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
+            <span
+              class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
           </button>
         }
       }
@@ -31,18 +34,14 @@
 
   <!-- header end, card list -->
 
-  @if (cardForms$ | async; as cardInputs) {
-    @for (cardRef of cards$ | async; track $index) {
-      @if(cardRef.object; as card) {
-        <div>{{ 'GUID ' + card.GUID }}</div>
-        <div>{{ ' Name ' + card.Name + ' ' + card.Nickname }}</div>
-        @if (cardInputs.get(cardRef.jsonRelPath.join('/')); as form) {
-          <app-custom-card-editor [form]="form"/>
-        }
-      }
-    } @empty {
-      <i>savefile contains no objects</i>
+  @if (cardForms$ | async; as cardForms) {
+    @for (cardForm of cardForms | keyvalue; track $index) {
+      <div>{{ cardForm.key }}</div>
+      <app-custom-card-editor [form]="cardForm.value"></app-custom-card-editor>
     }
+
+  } @else {
+    <i>savefile contains no objects</i>
   }
 
   <!-- new card creator -->

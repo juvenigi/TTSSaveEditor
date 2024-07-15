@@ -16,6 +16,25 @@ Diagram:
 
 # Journal
 
+## 13.07.2024
+
+## progress
+- none (did not have time or motivation)
+
+## tasks
+- [ ] create a formGroup for a card
+  - font size / max characters autoformatter 
+  - [ ] quill.js textarea? bbcode? -> use textarea + autodecreasing font size for now
+- [ ] wire IO events
+- [ ] improve backup functionality
+  - [ ] check if the backup + patch == current savefile
+  - [ ] keep a patchlist instead of saving snapshots (when patches do not result in the savefile, create a new snapshot)
+- [ ] Card NGRX Store
+  - Action: submit text / discard text -> (effect) use patch endpoint & sync states
+  - Action: add new card -> (util) create new card, luascript management, guid generation
+  - Action: remove card from deck
+  - (you can now move cards between decks, since you have add and remove)
+
 ## 10.07.2024 (after sleeping)
 
 ## progress
@@ -29,10 +48,7 @@ Diagram:
 - [X] return default directory if no path is specified
 - [X] list bags/decks of a savefile
 - [X] filter objects by bag
-- [ ] create a formGroup for a card
-  - font size / max characters autoformatter
-  - [ ] quill.js textarea? bbcode?
-- [ ] wire IO events
+
 - [X] backend: patch savefile json (individual cards, entire decks)
 
 ## 10.07.2024

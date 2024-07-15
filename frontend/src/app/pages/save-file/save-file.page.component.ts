@@ -1,7 +1,7 @@
 import {Component, inject, OnDestroy} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {debounceTime, distinctUntilChanged, firstValueFrom, map, Observable, tap, Unsubscribable} from "rxjs";
-import {AsyncPipe, NgTemplateOutlet} from "@angular/common";
+import {AsyncPipe, KeyValuePipe, NgTemplateOutlet} from "@angular/common";
 import {NgLetModule} from "ng-let";
 import {
   selectCardForms,
@@ -13,7 +13,7 @@ import {requiredFilter} from "../../utils/rxjs.utils";
 import {FormControl, ReactiveFormsModule} from "@angular/forms";
 import {SearchFilterActions} from "../../store/savefile-search-filters/search-filter.actions";
 import {CustomCardEditorComponent} from "./components/custom-card-editor/custom-card-editor.component";
-import {GameCardFormControl} from "../../store/savefile/savefile.state";
+import {GameCardFormData} from "../../store/savefile/savefile.state";
 import {selectSearchFilter} from "../../store/savefile-search-filters/search-filter.reducer";
 
 @Component({
@@ -24,7 +24,8 @@ import {selectSearchFilter} from "../../store/savefile-search-filters/search-fil
     NgLetModule,
     NgTemplateOutlet,
     ReactiveFormsModule,
-    CustomCardEditorComponent
+    CustomCardEditorComponent,
+    KeyValuePipe
   ],
   templateUrl: './save-file.page.component.html',
   styleUrl: './save-file.page.component.css'
@@ -38,7 +39,8 @@ export class SaveFilePageComponent implements OnDestroy {
 
   pathFilter$ = this.store.select(selectSearchFilter)
     .pipe(requiredFilter(), map(({jsonPath}) => jsonPath));
-  cardForms$: Observable<Map<string, GameCardFormControl>> = this.store.select(selectCardForms).pipe(requiredFilter())
+  cardForms$: Observable<Map<string, GameCardFormData>> = this.store.select(selectCardForms)
+    .pipe(requiredFilter(), tap(console.debug))
 
   objectSearch = new FormControl<string>('', {nonNullable: true});
   private subscriptions = [] as Unsubscribable[];

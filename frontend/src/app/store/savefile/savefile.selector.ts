@@ -1,7 +1,6 @@
 import {selectSavefileState} from "./savefile.reducer";
 import {createSelector} from "@ngrx/store";
-import {flattenContainedObjects, GameCardFormControl, SaveFile, trimName, tryCardInit} from "./savefile.state";
-import {FormControl} from "@angular/forms";
+import {flattenContainedObjects, GameCardFormData, SaveFile, trimName, tryCardInit} from "./savefile.state";
 import {ObjectState} from "../../types/ttstypes";
 import {selectSearchFilter} from "../savefile-search-filters/search-filter.reducer";
 
@@ -69,14 +68,20 @@ export const selectCardForms = createSelector(
     jsonRelPath: number[];
     object: ObjectState
   }[]): Map<string, Exclude<ReturnType<typeof tryCardInit>, undefined>> | undefined => {
-    if (!state) return;
-    return state.reduce((accum, obj) => {
-      const form: undefined | FormControl<string> = tryCardInit(obj.object);
+    if (!state) {
+      console.debug("no state!")
+      return;
+    }
+    const generatedMappings = state.reduce((accum, {jsonRelPath, object}) => {
+      const form: GameCardFormData | undefined = tryCardInit(jsonRelPath, object);
       if (form) {
-        accum.set(obj.jsonRelPath.join('/'), form);
+        accum.set(jsonRelPath.join('/'), form);
       }
       return accum;
-    }, new Map<string, GameCardFormControl>);
+    }, new Map<string, GameCardFormData>());
+    console.debug(state, generatedMappings);
+
+    return generatedMappings;
   }
 )
 
@@ -84,12 +89,8 @@ export const selectObjectPathMap = createSelector(
   selectFlattenedObjects,
   (state) => {
     if (!state) return;
-    state.reduce((map, {object, jsonRelPath}) =>
+    return state.reduce((map, {object, jsonRelPath}) =>
         map.set(jsonRelPath.join('/'), object),
-      new Map<string, ObjectState>);
+      new Map<string, ObjectState>());
   }
 );
-
-
-
-

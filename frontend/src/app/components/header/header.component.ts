@@ -2,7 +2,7 @@ import {Component, inject, OnDestroy} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {AsyncPipe, NgClass} from "@angular/common";
 import {debounceTime, distinctUntilChanged, map, Unsubscribable, withLatestFrom} from "rxjs";
-import {ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive} from "@angular/router";
+import {NavigationEnd, Router, RouterLink, RouterLinkActive} from "@angular/router";
 import {NgLetModule} from "ng-let";
 import {selectSaveName} from "../../store/savefile/savefile.selector";
 import {selectRootPath} from "../../store/directory/directory.selector";
@@ -10,7 +10,6 @@ import {NgbCollapse} from "@ng-bootstrap/ng-bootstrap";
 import {DirectoryApiActions} from "../../store/directory/directory.actions";
 import {FormControl, ReactiveFormsModule} from "@angular/forms";
 import {instanceOfFilter} from "../../utils/rxjs.utils";
-import {selectDirectoryState} from "../../store/directory/directory.reducer";
 
 @Component({
   selector: 'app-header',
@@ -29,10 +28,8 @@ import {selectDirectoryState} from "../../store/directory/directory.reducer";
 })
 export class HeaderComponent implements OnDestroy {
   private readonly store = inject(Store)
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private subscriptions: Unsubscribable [] = [];
-  private directoryState$ = this.store.select(selectDirectoryState);
   saveName$ = this.store.select(selectSaveName);
   rootPath$ = this.store.select(selectRootPath);
   currentPath$ = this.router.events.pipe(
@@ -47,6 +44,17 @@ export class HeaderComponent implements OnDestroy {
   constructor() {
     this.store.dispatch(DirectoryApiActions.requestDirectory({rootPath: this.rootDirForm.value}));
     this.setupForm();
+    this.setupFormToggle();
+  }
+
+  private setupFormToggle() {
+    this.subscriptions.push(
+      this.currentPath$.subscribe(path => {
+        if (path !== "/directory") {
+          this.rootDirSelectorCollapsed = true;
+        }
+      })
+    )
   }
 
   private setupForm() {
@@ -70,10 +78,6 @@ export class HeaderComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach(i => i.unsubscribe());
-  }
-
-  navigateToDirectory() {
-    void this.router.navigate(['directory']);
   }
 
   onSubmit(event: Event) {

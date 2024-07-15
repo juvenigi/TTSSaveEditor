@@ -1,1 +1,6 @@
-<textarea cols="2" class="form-control" [formControl]="cardForm"></textarea>
+@if (form) {
+  <input type="number" class="form-control" [formControl]="form.controls['fontSize']">
+  <textarea cols="4" class="form-control" [formControl]="form.controls['cardScript']"></textarea>
+  <textarea cols="4" class="form-control" [formControl]="form.controls['cardText']"></textarea>
+  <button class="btn btn-success" type="button" (click)="saveCard()"></button>
+}
