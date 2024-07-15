@@ -10,7 +10,7 @@ export class DirectoryEffects {
 
   fetchDir$ = createEffect(() => this.actions$.pipe(
     ofType(DirectoryApiActions.requestDirectory),
-    switchMap(({rootPath}) => this.service.getDirectory(rootPath).pipe(
+    switchMap(({rootPath}, stuff) => this.service.getDirectory(rootPath).pipe(
       map(({path, entries}) => DirectoryApiActions
         .directorySuccessResponse({directory: {directoryEntries: entries.map(e => e.path), rootPath: path, relPath: "", loadingState: "DONE"}})),
       catchError((err) => of(DirectoryApiActions.directoryFailureResponse({request: rootPath, message: err})))

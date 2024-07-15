@@ -8,6 +8,7 @@
       </button>
     }
   </div>
+  <!-- save files todo: display a separator between "flattened view" and current directory -->
   @for (item of savefiles$ | async; track $index) {
     @if (pathMask$ | async; as mask) {
       @if (item.includes(mask)) {

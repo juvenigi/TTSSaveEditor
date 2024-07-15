@@ -47,6 +47,10 @@ export class HeaderComponent implements OnDestroy {
     this.setupFormToggle();
   }
 
+  /**
+   * Hide input once we are no longer in the '/directory' route
+   * @private
+   */
   private setupFormToggle() {
     this.subscriptions.push(
       this.currentPath$.subscribe(path => {

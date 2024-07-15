@@ -13,5 +13,4 @@ import {DirectoryPageComponent} from "./pages/directory/directory.page.component
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  title = 'TTS Save Editor';
 }

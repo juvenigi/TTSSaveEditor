@@ -11,6 +11,7 @@
     <input type="text" [formControl]="objectSearch">
   </div>
   <div class="row mb-2 gap-1">
+    <!-- less ugly icons for going up (both here and the deck selector)-->
     <button type="button" class="col-auto btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i>
     </button>
     @for (collectionRef of collections$ | async; track $index) {
@@ -44,6 +45,6 @@
     <i>savefile contains no objects</i>
   }
 
-  <!-- new card creator -->
+  <!-- TODO new card creator -->
 
 </div>

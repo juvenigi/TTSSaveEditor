@@ -25,6 +25,8 @@ export const selectSavefileHeader = createSelector(
   }
 );
 
+// TODO: optimise the chain of the selectors, because you are not utilizing memoization correctly.
+// TODO2: separate selector post-filter
 export const selectFlattenedObjects = createSelector(
   selectSavefileState,
   selectSearchFilter,
@@ -53,6 +55,7 @@ export const selectCollections = createSelector(
   }
 );
 
+//TODO cleanup
 export const selectCards = createSelector(
   selectFlattenedObjects,
   (objects) => {
@@ -61,13 +64,12 @@ export const selectCards = createSelector(
   }
 );
 
-
 export const selectCardForms = createSelector(
   selectCards,
   (state?: {
     jsonRelPath: number[];
     object: ObjectState
-  }[]): Map<string, Exclude<ReturnType<typeof tryCardInit>, undefined>> | undefined => {
+  }[]): Map<string, GameCardFormData> | undefined => {
     if (!state) {
       console.debug("no state!")
       return;

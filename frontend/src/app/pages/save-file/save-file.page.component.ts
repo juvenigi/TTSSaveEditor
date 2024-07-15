@@ -59,10 +59,6 @@ export class SaveFilePageComponent implements OnDestroy {
     this.subscriptions.forEach(i => i.unsubscribe());
   }
 
-  formatCollectionName(type: string, nickname: string) {
-    return;
-  }
-
   collectionPressed(jsonPath: number[]) {
     this.store.dispatch(SearchFilterActions.applyFilter({jsonPath}));
   }

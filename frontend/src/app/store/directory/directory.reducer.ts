@@ -25,10 +25,10 @@ export const directoryReducer = createReducer(
         segments.push(folder);
       }
     }
-    return {...state, relPath: segments.join('\\')};
+    return {...state, relPath: segments.join('\\')} satisfies Directory;
   }),
   on(IOActions.writeSavefileSuccess, (state: Directory, {file}) => {
-    const exists = state.directoryEntries.findIndex(value => file.path) !== -1;
+    const exists = state.directoryEntries.findIndex(value => value === file.path) !== -1;
     return {
       ...state,
       directoryEntries: exists ? state.directoryEntries : [...state.directoryEntries, file.path]

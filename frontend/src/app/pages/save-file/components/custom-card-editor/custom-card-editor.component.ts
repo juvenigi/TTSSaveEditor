@@ -1,10 +1,12 @@
-import {Component, inject, Input, OnInit} from '@angular/core';
+import {Component, effect, inject, input, OnDestroy, OnInit} from '@angular/core';
 import {GameCardFormData} from "../../../../store/savefile/savefile.state";
 import {FormBuilder, ReactiveFormsModule} from "@angular/forms";
-import CardService from "../../../../services/card.service";
-import {firstValueFrom, tap} from "rxjs";
+import {Observable} from "rxjs";
 import {Store} from "@ngrx/store";
 import {selectObjectPathMap} from "../../../../store/savefile/savefile.selector";
+import {CustomCardActions} from "../../../../store/savefile/savefile.actions";
+import {requiredFilter} from "../../../../utils/rxjs.utils";
+import {ObjectState} from "../../../../types/ttstypes";
 
 @Component({
   selector: 'app-custom-card-editor',
@@ -15,38 +17,37 @@ import {selectObjectPathMap} from "../../../../store/savefile/savefile.selector"
   templateUrl: './custom-card-editor.component.html',
   styleUrl: './custom-card-editor.component.css'
 })
-export class CustomCardEditorComponent implements OnInit {
-  @Input('form') formData!: GameCardFormData;
+export class CustomCardEditorComponent implements OnInit, OnDestroy {
+  form = input.required<GameCardFormData>();
+  formGroup!: ReturnType<typeof this.initForm>;
+  formPatcher = effect(() => {
+    this.formGroup.patchValue(this.form());
+    this.formGroup.markAsPristine();
+  });
+
   private builder = inject(FormBuilder).nonNullable;
-  private cardService = inject(CardService);
   private store = inject(Store);
-  objects = this.store.select(selectObjectPathMap).pipe(tap(console.debug));
-  form!: ReturnType<typeof this.initForm>
+  //TODO: add deck/collection selector
+  private objects: Observable<Map<string, ObjectState>> = this.store.select(selectObjectPathMap).pipe(requiredFilter());
 
   ngOnInit() {
-    this.form = this.builder.group(this.formData)
+    this.formGroup = this.initForm();
+  }
+
+  ngOnDestroy() {
+    if(this.formGroup.dirty) {
+      void this.save()
+    }
+    this.formPatcher.destroy();
   }
 
   private initForm() {
-    return this.builder.group(this.formData);
+    return this.builder.group(this.form());
   }
 
-  get cardForm() {
-    return this.form.controls.cardScript;
-  }
-
-  get scriptForm() {
-    return this.form.controls.cardText;
-  }
-
-  async saveCard() {
+  async save() {
     console.debug("saveCard fired")
-    const objPath = this.form.value.path;
-    if(!objPath || !this.form.value) return;
-    const original = await firstValueFrom(this.objects)
-      .then(item => item?.get(objPath))
-    if (!original) return;
-    console.debug(original)
-    console.debug(this.cardService.createEditPatch(this.form.getRawValue(), original));
+    console.debug(this.formGroup.getRawValue())
+    this.store.dispatch(CustomCardActions.pushChanges({cardData: this.formGroup.getRawValue()}))
   }
 }

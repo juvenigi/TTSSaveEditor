@@ -37,6 +37,7 @@ func NewSavefile(fullPath string, data []byte) (*SaveFile, error) {
 
 // SetDirectory scans a directory and its subdirectories for JSON files,
 // returning a map where the key is the full file path and the value is the SaveFile struct.
+// TODO: do not remove previous SaveFiles unless we are force-reloading
 func (tt *Tabletop) SetDirectory(path string) error {
 	saveFiles := make(map[string]*SaveFile)
 	visited := make(map[string]bool)
@@ -105,6 +106,7 @@ func (tt *Tabletop) PatchSaveFile(path string, original []byte, patches []byte) 
 	return modified, nil
 }
 
+// FIXME: this function does work, or the largeestBakNum does not work as advertised
 func (tt *Tabletop) BackupSaveFile(path string, data []byte) error {
 	save := tt.saves[path]
 	if save == nil {

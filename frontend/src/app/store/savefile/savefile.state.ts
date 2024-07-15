@@ -1,4 +1,5 @@
 import {ObjectState, SaveState} from "../../types/ttstypes";
+import {generateJSONPatch, Operation} from "generate-json-patch";
 
 export interface SaveFile {
   path: string
@@ -92,3 +93,17 @@ export function tryCardInit(jsonRelPath: number[], object: ObjectState) {
   return {cardScript, cardText, path, fontSize};
 }
 
+export function getObjectPatch(formData: GameCardFormData, target: ObjectState) {
+  try {
+    const objPath = formData.path.replaceAll('/','/ContainedObjects/');
+    const edit = {
+      ...target,
+      LuaScriptState: JSON.stringify([formData.cardText]),
+      LuaScript: setFontSizeOfCustomCard(formData.fontSize)
+    } satisfies ObjectState
+    return generateJSONPatch(target, edit)
+      .map(operation => ({...operation, path: `/ObjectStates/${objPath}${operation.path}`} satisfies Operation));
+  } catch (_) {
+    return undefined;
+  }
+}
