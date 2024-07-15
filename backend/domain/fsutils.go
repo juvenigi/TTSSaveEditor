@@ -1,10 +1,13 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2/log"
 	"os"
+	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -36,4 +39,20 @@ func parseEntries(entries []os.DirEntry, currentDir string, visited map[string]b
 		saveFiles[fullPath] = &SaveFile{stale: false}
 	}
 	return newQueue
+}
+
+// TODO makes more sense to keep here, but I am using this function directly in the controller, which is not smart
+func GetDefaultTTSAbsPath() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	var path string
+	switch runtime.GOOS {
+	case "windows":
+		path = filepath.Join(usr.HomeDir, "Documents\\My Games\\Tabletop Simulator\\Saves")
+	default:
+		return "", errors.New("not implemented")
+	}
+	return path, nil
 }

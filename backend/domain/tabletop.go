@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"fmt"
+	jsonpatch "github.com/evanphx/json-patch"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -34,9 +35,9 @@ func NewSavefile(fullPath string, data []byte) (*SaveFile, error) {
 	return &SaveFile{saveData: data}, err
 }
 
-// ScanPathForSaves scans a directory and its subdirectories for JSON files,
+// SetDirectory scans a directory and its subdirectories for JSON files,
 // returning a map where the key is the full file path and the value is the SaveFile struct.
-func (tt *Tabletop) ScanPathForSaves(path string) error {
+func (tt *Tabletop) SetDirectory(path string) error {
 	saveFiles := make(map[string]*SaveFile)
 	visited := make(map[string]bool)
 	// Queue for directories to process
@@ -86,6 +87,22 @@ func (tt *Tabletop) getSaveFromFS(path string) ([]byte, error) {
 	tt.rwLock.Unlock()
 
 	return data, nil
+}
+
+func (tt *Tabletop) PatchSaveFile(path string, original []byte, patches []byte) ([]byte, error) {
+	patch, err := jsonpatch.DecodePatch(patches)
+	if err != nil {
+		return nil, err
+	}
+	modified, err := patch.Apply(original)
+	if err != nil {
+		return nil, err
+	}
+	err = tt.BackupSaveFile(path, modified)
+	if err != nil {
+		return nil, err
+	}
+	return modified, nil
 }
 
 func (tt *Tabletop) BackupSaveFile(path string, data []byte) error {
