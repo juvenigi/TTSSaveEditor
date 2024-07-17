@@ -25,7 +25,13 @@ export const SaveFileEditActions = createActionGroup({
 export const CustomCardActions = createActionGroup({
   source: 'Custom Card',
   events: {
-    'Push Changes': props<{cardData: GameCardFormData}>(),
-    'Push Changes Fail': props<{reason: string}>()
+    'Push Changes': props<{ cardData: GameCardFormData }>(),
+    'Push Changes Fail': props<{ reason: string }>(),
+    'Push New Card': props<{ cardData: GameCardFormData, ref: Symbol }>(),
+    'Push New Success': props<{ ref: Symbol, data: SaveFile }>(),
+    'Push New Failure': props<{ ref: Symbol, reason: string }>(),
+    'Delete Card': props<{ itemPath: string }>(),
+    'Delete Card Success': props<{ data: SaveFile }>(),
+    'Delete Card Fail': emptyProps()
   }
 });

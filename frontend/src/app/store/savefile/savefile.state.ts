@@ -93,16 +93,29 @@ export function tryCardInit(jsonRelPath: number[], object: ObjectState) {
   return {cardScript, cardText, path, fontSize};
 }
 
+export function initNewCard(path: string): GameCardFormData {
+  return {
+    cardScript: setFontSizeOfCustomCard(80),
+    cardText: "",
+    path,
+    fontSize: 80
+  }
+}
+
+export function getActualObjectJsonPath(formDataPath: string ){
+  return `/ObjectStates/${formDataPath.replaceAll('/','/ContainedObjects/')}`;
+}
+
 export function getObjectPatch(formData: GameCardFormData, target: ObjectState) {
   try {
-    const objPath = formData.path.replaceAll('/','/ContainedObjects/');
+    const objPath = getActualObjectJsonPath(formData.path);
     const edit = {
       ...target,
       LuaScriptState: JSON.stringify([formData.cardText]),
       LuaScript: setFontSizeOfCustomCard(formData.fontSize)
     } satisfies ObjectState
     return generateJSONPatch(target, edit)
-      .map(operation => ({...operation, path: `/ObjectStates/${objPath}${operation.path}`} satisfies Operation));
+      .map(operation => ({...operation, path: `${objPath}${operation.path}`} satisfies Operation));
   } catch (_) {
     return undefined;
   }

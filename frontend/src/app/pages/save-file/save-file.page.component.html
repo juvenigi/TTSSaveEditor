@@ -1,29 +1,35 @@
 <div class="container p-5">
   @if (saveState$ | async; as save) {
-    <h1>{{ save.name }}</h1>
-    <h2>{{ 'date: ' + save.date }}</h2>
+    <h1>{{ save.name + '  ' + save.date }}</h1>
     <div>{{ save.description ?? 'no description provided.' }}</div>
   } @else {
-    <i>loading save...</i>
+    <span class="spinner-grow"></span>
+    <span class="spinner-grow"></span>
+    <span class="spinner-grow"></span>
   }
-
-  <div class="row mt-2 mb-1">
-    <input type="text" [formControl]="objectSearch">
+  <div class="row mt-4 mb-1">
+    <div class="input-group input-group-lg">
+      <div class="input-group-text"><i class="bi bi-search"></i></div>
+      <input focusOnLoad type="text" class="form-control" [formControl]="objectSearch">
+    </div>
   </div>
-  <div class="row mb-2 gap-1">
+  <div class="row my-3 gap-1">
     <!-- less ugly icons for going up (both here and the deck selector)-->
-    <button type="button" class="col-auto btn btn-secondary" (click)="goUpCollection()"><i class="bi bi-arrow-up"></i>
+    <button type="button" class="col-auto text-nowrap btn btn-secondary" (click)="goUpCollection()"><i
+      class="bi bi-arrow-up mx-1"></i>
     </button>
     @for (collectionRef of collections$ | async; track $index) {
       @if (collectionRef.object; as collection) {
         @if (collection.Nickname.trim().length > 0) {
-          <button class="col-auto btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
+          <button class="col-auto text-nowrap btn btn-secondary"
+                  (click)="collectionPressed(collectionRef.jsonRelPath)"
           >{{ collection.Nickname }}
             <span
               class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
           </button>
         } @else {
-          <button class="col-auto btn btn-secondary" (click)="collectionPressed(collectionRef.jsonRelPath)"
+          <button class="col-auto text-nowrap btn btn-secondary"
+                  (click)="collectionPressed(collectionRef.jsonRelPath)"
           ><i>{{ collection.Name }}</i>
             <span
               class="ms-1 badge rounded-pill bg-body-tertiary text-dark">{{ collection.ContainedObjects?.length ?? 0 }}</span>
@@ -32,18 +38,30 @@
       }
     }
   </div>
-
-  <!-- header end, card list -->
-
-  @if (cardForms$ | async; as cardForms) {
-    @for (cardForm of cardForms | keyvalue; track $index) {
-      <div>{{ cardForm.key }}</div>
-      <app-custom-card-editor [form]="cardForm.value"></app-custom-card-editor>
+  <div class="row p-0 my-4">
+    <button type="button" (click)="collapseEditor.toggle()"
+            class="col-12 btn"
+            [ngClass]="collapseCardCreator? 'btn-success':'btn-secondary'"
+    >{{ collapseCardCreator ? 'Create New Card' : 'Hide' }}
+    </button>
+  </div>
+  <div class="row p-0 my-2" #collapseEditor="ngbCollapse" [(ngbCollapse)]="collapseCardCreator">
+    <app-custom-card-creator (submit)="handleSubmitState($event)"/>
+  </div>
+  <div class="row mt-4">
+    <h3>Existing Cards</h3>
+  </div>
+  <div class="row p-0 mt-2 row-gap-2">
+    @if (cardForms$ | async; as cardForms) {
+      @for (cardForm of cardForms | keyvalue; track cardForm.key) {
+        <app-custom-card-editor [cardPath]="cardForm.key" [initialValue]="cardForm.value"/>
+      }
+    } @else {
+      <span class="spinner-grow"></span>
+      <span class="spinner-grow"></span>
+      <span class="spinner-grow"></span>
     }
-
-  } @else {
-    <i>savefile contains no objects</i>
-  }
+  </div>
 
   <!-- TODO new card creator -->
 

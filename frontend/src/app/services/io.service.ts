@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {map, Observable} from "rxjs";
-import {SaveState} from "../types/ttstypes";
+import {ObjectState, SaveState} from "../types/ttstypes";
 import {Patch} from "generate-json-patch";
 
 @Injectable({
@@ -10,6 +10,7 @@ import {Patch} from "generate-json-patch";
 export class IoService {
   private http = inject(HttpClient);
   private api = "http://localhost:3000/api"
+
 // FIXME: response validation
 
   public getSaveFile(path: string): Observable<SaveState> {
@@ -27,5 +28,15 @@ export class IoService {
     return this.http.patch<unknown>(`${this.api}/savefile`, patch, {params: {path}}).pipe(map(value => {
       return value as SaveState;
     }));
+  }
+
+  pushNewCard(savepath: string, jsonPath: string, LuaScript: string, LuaScriptState: string) {
+    return this.http.post(`${this.api}/card`, {LuaScript, LuaScriptState} satisfies Partial<ObjectState>,
+      {params: {'path': savepath, jsonPath}})
+      .pipe(map(value => value as SaveState));
+  }
+
+  deleteCard(path: string, jsonPath: string) {
+    return this.http.delete(`${this.api}/card`, {params: {path, jsonPath}}).pipe(map(value => value as SaveState));
   }
 }

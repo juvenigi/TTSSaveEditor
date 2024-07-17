@@ -33,7 +33,6 @@ export const selectFlattenedObjects = createSelector(
   (state, {jsonPath, search}) => {
     const data = state.saveData
     if (!data) return;
-    console.debug(jsonPath)
     return flattenContainedObjects(data.ObjectStates).filter(object => {
       const pathCondition = jsonPath.length === 0 || object.jsonRelPath.join('/').startsWith(jsonPath.join('/'));
       const searchCondition = search.length === 0 || Object.values(object.object).some(value => {
@@ -71,19 +70,15 @@ export const selectCardForms = createSelector(
     object: ObjectState
   }[]): Map<string, GameCardFormData> | undefined => {
     if (!state) {
-      console.debug("no state!")
       return;
     }
-    const generatedMappings = state.reduce((accum, {jsonRelPath, object}) => {
+    return state.reduce((accum, {jsonRelPath, object}) => {
       const form: GameCardFormData | undefined = tryCardInit(jsonRelPath, object);
       if (form) {
         accum.set(jsonRelPath.join('/'), form);
       }
       return accum;
     }, new Map<string, GameCardFormData>());
-    console.debug(state, generatedMappings);
-
-    return generatedMappings;
   }
 )
 
@@ -96,3 +91,11 @@ export const selectObjectPathMap = createSelector(
       new Map<string, ObjectState>());
   }
 );
+
+export const selectAllObjectsPathMap = createSelector(
+  selectSavefileState, (state) => {
+    if (!state.saveData?.ObjectStates) return;
+    return flattenContainedObjects(state.saveData.ObjectStates).reduce((map, {object, jsonRelPath}) =>
+        map.set(jsonRelPath.join('/'), object),
+      new Map<string, ObjectState>());
+  })

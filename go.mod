@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/evanphx/json-patch v0.5.2
 	github.com/gofiber/fiber/v2 v2.52.5
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 )
 
 require (

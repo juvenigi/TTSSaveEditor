@@ -1,7 +1,52 @@
-<input type="number" class="form-control" [formControl]="formGroup.controls['fontSize']">
-<textarea cols="4" class="form-control" [formControl]="formGroup.controls['cardScript']"></textarea>
-<textarea cols="4" class="form-control" [formControl]="formGroup.controls['cardText']"></textarea>
-<button class="btn btn-success" type="button" (click)="save()" [disabled]="formGroup.pristine"
->{{ formGroup.pristine ? 'Saved' : 'Save Changes' }}
-</button>
-
+<div class="row card">
+  <div class="card-header">Card <span class="ms-1 badge rounded-pill bg-secondary">{{ formattedCardPath }}</span></div>
+  <div class="card-body row-gap-1">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <span class="nav-link" [ngClass]="{'active': !collapsed.text}" (click)="selectTab('text')">Text</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" [ngClass]="{'active': !collapsed.script}" (click)="selectTab('script')">Script</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link p-0 pt-1">
+      <div class="input-group input-group-sm">
+        <div class="input-group-text">Font Size:</div>
+        <input type="number" class="form-control w-5rem" [formControl]="formGroup.controls['fontSize']">
+      </div>
+        </span>
+      </li>
+    </ul>
+    <div #collapseScriptTab="ngbCollapse" [(ngbCollapse)]="collapsed.script">
+      <textarea cols="4" class="form-control" [formControl]="formGroup.controls['cardScript']"></textarea>
+    </div>
+    <div #collapseTextTab="ngbCollapse" [(ngbCollapse)]="collapsed.text">
+      <textarea cols="4" class="form-control" [formControl]="formGroup.controls['cardText']"></textarea>
+    </div>
+    <div class="row justify-content-between mt-3">
+      <div class="col-auto btn-toolbar gap-2 ">
+        <button class="btn btn-success" type="button" (click)="save()" [disabled]="formGroup.pristine"
+        >@if (submitting) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }{{ formGroup.pristine ? 'Saved' : 'Save Changes' }}
+        </button>
+        <button type="button" class="btn btn-secondary" [disabled]="formGroup.pristine"
+                (click)="revert()"
+        ><i class="bi bi-arrow-counterclockwise me-1"></i>Revert
+        </button>
+      </div>
+      <div class="col-auto btn-toolbar gap-2">
+        <button class="btn btn-danger" #hideDeleteButton="ngbCollapse" [(ngbCollapse)]="deleteHidden"
+        (click)="deleteMe()"
+        >
+          Delete!
+        </button>
+        <button type="button" class="btn"
+                [ngClass]="deleteHidden? 'btn-danger':'btn-outline-secondary'"
+                (click)="hideDeleteButton.toggle()"
+        >{{ deleteHidden ? 'Delete...' : 'I changed my mind' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,5 @@
-<div class="container">
-  <div class="row btn-group gap-2">
+<div class="container my-4">
+  <div class="row btn-toolbar gap-3 my-3 justify-content-center">
     @for (item of relFolders$ | async; track $index) {
       <button type="button"
               class="col-auto btn btn-primary"
@@ -9,13 +9,15 @@
     }
   </div>
   <!-- save files todo: display a separator between "flattened view" and current directory -->
-  @for (item of savefiles$ | async; track $index) {
-    @if (pathMask$ | async; as mask) {
-      @if (item.includes(mask)) {
-        <div class="row" (click)="onSelect(item)">{{ item }}</div>
+  <ul class="row mb-5 list-group">
+    @for (item of savefiles$ | async; track $index) {
+      @if (pathMask$ | async; as mask) {
+        @if (item.includes(mask)) {
+          <a class="hover-link list-group-item icon-link icon-link-hover" (click)="onSelect(item)"><i class="bi bi-filetype-json me-1"></i>{{ item }}</a>
+        }
       }
+    } @empty {
+      <li class="list-group-item"><i>no items</i></li>
     }
-  } @empty {
-    <i>no items</i>
-  }
+  </ul>
 </div>

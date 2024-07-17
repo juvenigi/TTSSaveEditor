@@ -33,28 +33,30 @@ Diagram:
 ## tasks
 - [X] backend add new Card to a deck
 - [X] backend remove Card from a deck
-- [ ] bug/qol: sort directory entries topologically
-- [ ] bug: don't reset card form if changes are pending
-- [ ] bug: don't discard card changes if the other deck is selected, make the edited card autosave
-- [ ] bug: backup files don't go beyond 0.bak (if 0.bak exists, 1.bak should be created instead of overriding 0.bak)
-- [ ] Card NGRX Store (remaining)
+- [X] bug/qol: sort directory entries topologically
+- [X] bug: don't reset card form if changes are pending
+- [X] Card NGRX Store (remaining)
   - Action: submit text / discard text -> (effect) use patch endpoint & sync states
   - Action: add new card -> (util) create new card, luascript management, guid generation
   - Action: remove card from deck
   - (you can now move cards between decks, since you have add and remove)
-- [ ] feature: deck/bag selector, refile cards
+- [X] feature: deck/bag selector,
 - [ ] feature: max characters
 - [ ] refactor backend (deobfuscate logic)
 - [ ] improve backup functionality
   - [ ] check if the backup + patch == current savefile
   - [ ] keep a patchlist instead of saving snapshots (when patches do not result in the savefile, create a new
     snapshot)
-- [ ] UI upgrades
+- [X] UI upgrades
   - [ ] improve header (fancy savefile name formatting)
-  - [ ] improve directory (visual improvement)
-  - [ ] improve directory (savefile names and other metadata, needs backend extensions)
-- [ ]  savefile selector optimisations
+  - [X] improve directory (visual improvement)
+  - [X] improve directory (savefile names and other metadata, needs backend extensions)
+  - [X] improve savefile edit visuals
 
+- [ ] ngstore savefile selector optimisations
+- [ ] bug: don't discard card changes if the other deck is selected, make the edited card autosave
+- [ ] bug: backup files don't go beyond 0.bak (if 0.bak exists, 1.bak should be created instead of overriding 0.bak)
+- [ ] refile cards
 
 ## 16.07.2024
 

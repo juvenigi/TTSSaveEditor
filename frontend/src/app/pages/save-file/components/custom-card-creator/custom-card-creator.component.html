@@ -1,0 +1,26 @@
+<div class="row card">
+  <div class="card-header">Card <span class="ms-1 badge rounded-pill bg-secondary">{{ formattedCardPath }}</span></div>
+  <div class="card-body row-gap-1">
+    <ul class="nav nav-tabs">
+      <li class="nav-item"><span class="nav-link p-0 pt-1">
+        <div class="input-group input-group-sm">
+          <div class="input-group-text">Font Size:</div>
+          <input type="number" class="form-control w-5rem" [formControl]="formGroup.controls['fontSize']">
+        </div>
+      </span></li>
+    </ul>
+    <textarea cols="8" class="form-control" [formControl]="formGroup.controls['cardText']"></textarea>
+    <div class="btn-toolbar gap-2 mt-3">
+      <button class="btn btn-success" type="button" (click)="save()" [disabled]="formGroup.pristine && !addingToDeck"
+      >@if (submitting) {
+        <span class="spinner-border spinner-border-sm me-1"></span>
+      }{{ 'Submit Card' }}
+      </button>
+      @if (!addingToDeck) {
+        <div class="btn text-error">
+          <i class="bi bi-exclamation-diamond"></i> You have not selected a deck. Use the buttons above
+        </div>
+      }
+    </div>
+  </div>
+</div>

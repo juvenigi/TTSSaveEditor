@@ -1,7 +1,7 @@
 import {Component, inject, OnDestroy} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {debounceTime, distinctUntilChanged, firstValueFrom, map, Observable, tap, Unsubscribable} from "rxjs";
-import {AsyncPipe, KeyValuePipe, NgTemplateOutlet} from "@angular/common";
+import {AsyncPipe, KeyValuePipe, NgClass, NgTemplateOutlet} from "@angular/common";
 import {NgLetModule} from "ng-let";
 import {
   selectCardForms,
@@ -15,6 +15,9 @@ import {SearchFilterActions} from "../../store/savefile-search-filters/search-fi
 import {CustomCardEditorComponent} from "./components/custom-card-editor/custom-card-editor.component";
 import {GameCardFormData} from "../../store/savefile/savefile.state";
 import {selectSearchFilter} from "../../store/savefile-search-filters/search-filter.reducer";
+import {NgbCollapse} from "@ng-bootstrap/ng-bootstrap";
+import {CustomCardCreatorComponent} from "./components/custom-card-creator/custom-card-creator.component";
+import {AutoFocusDirective} from "../../directives/auto-focus-directive";
 
 @Component({
   selector: 'app-save-file-page',
@@ -25,7 +28,11 @@ import {selectSearchFilter} from "../../store/savefile-search-filters/search-fil
     NgTemplateOutlet,
     ReactiveFormsModule,
     CustomCardEditorComponent,
-    KeyValuePipe
+    KeyValuePipe,
+    NgbCollapse,
+    CustomCardCreatorComponent,
+    NgClass,
+    AutoFocusDirective
   ],
   templateUrl: './save-file.page.component.html',
   styleUrl: './save-file.page.component.css'
@@ -40,10 +47,11 @@ export class SaveFilePageComponent implements OnDestroy {
   pathFilter$ = this.store.select(selectSearchFilter)
     .pipe(requiredFilter(), map(({jsonPath}) => jsonPath));
   cardForms$: Observable<Map<string, GameCardFormData>> = this.store.select(selectCardForms)
-    .pipe(requiredFilter(), tap(console.debug))
+    .pipe(requiredFilter(), distinctUntilChanged())
 
   objectSearch = new FormControl<string>('', {nonNullable: true});
   private subscriptions = [] as Unsubscribable[];
+  collapseCardCreator = true;
 
   constructor() {
     this.subscriptions.push(
@@ -68,5 +76,11 @@ export class SaveFilePageComponent implements OnDestroy {
       .then((path: number[]) => this.store.dispatch(
         SearchFilterActions.applyFilter({jsonPath: path.slice(0, path.length - 1)})
       ));
+  }
+
+  handleSubmitState($event: boolean) {
+    if ($event) {
+      this.collapseCardCreator = true;
+    }
   }
 }

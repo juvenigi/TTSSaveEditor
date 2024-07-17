@@ -26,7 +26,7 @@ export class DirectoryPageComponent {
     map((dir: Directory) => dir.directoryEntries)
   );
 
-  relFolders$: Observable<string[]> = this.store.select(selectRelDirectories)
+  relFolders$: Observable<string[]> = this.store.select(selectRelDirectories);
 
   pathMask$: Observable<string> = this.store.select(selectPathMask);
 

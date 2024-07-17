@@ -4,10 +4,11 @@ import {IoService} from "../../services/io.service";
 import {catchError, EMPTY, map, of, switchMap, withLatestFrom} from "rxjs";
 import {Store} from "@ngrx/store";
 import {CustomCardActions, SaveFileApiActions} from "./savefile.actions";
-import {getObjectPatch, SaveFile} from "./savefile.state";
+import {getActualObjectJsonPath, getObjectPatch, SaveFile, setFontSizeOfCustomCard} from "./savefile.state";
 import {SaveState} from "../../types/ttstypes";
 import {selectObjectPathMap, selectSavefileHeader} from "./savefile.selector";
 import {SearchFilterActions} from "../savefile-search-filters/search-filter.actions";
+import {requiredFilter} from "../../utils/rxjs.utils";
 
 @Injectable()
 export class SavefileEffects {
@@ -76,6 +77,64 @@ export class SavefileEffects {
           catchError(() => of(CustomCardActions.pushChangesFail({reason: "network error"})))
         );
       })
+  ));
+
+  submitNewCard$ = createEffect(() => this.actions$.pipe(
+    ofType(CustomCardActions.pushNewCard),
+    withLatestFrom(this.store.select(selectSavefileHeader).pipe(requiredFilter())),
+    switchMap(([{cardData: formValues, ref}, {path}]) => {
+        return this.io.pushNewCard(
+          path,
+          getActualObjectJsonPath(formValues.path),
+          setFontSizeOfCustomCard(formValues.fontSize),
+          JSON.stringify([formValues.cardText])
+        ).pipe(
+          map((data: SaveState) => CustomCardActions.pushNewSuccess({
+            ref,
+            data: ({
+              saveData: data,
+              path,
+              objectEdits: new Map(),
+              loadingState: "DONE"
+            } satisfies SaveFile),
+          })),
+          catchError(err => of(CustomCardActions.pushNewFailure({
+              ref, reason: err ? err?.toString() ?? 'unknown' : 'unknown'
+            })
+          ))
+        );
+      }
+    )
+  ));
+
+  deleteCard$ = createEffect(() => this.actions$.pipe(
+    ofType(CustomCardActions.deleteCard),
+    withLatestFrom(this.store.select(selectSavefileHeader).pipe(requiredFilter())),
+    switchMap(([{itemPath}, {path}]) => {
+        return this.io.deleteCard(
+          path,
+          getActualObjectJsonPath(itemPath)
+        ).pipe(
+          map((data: SaveState) => CustomCardActions.deleteCardSuccess({
+            data: ({
+              saveData: data,
+              path,
+              objectEdits: new Map(),
+              loadingState: "DONE"
+            } satisfies SaveFile),
+          })),
+          catchError(_ => of(CustomCardActions.deleteCardFail()
+          ))
+        );
+      }
+    )
+  ))
+
+  updateSaveAfterNewCard$ = createEffect(() => this.actions$.pipe(
+    ofType(CustomCardActions.pushNewSuccess, CustomCardActions.deleteCardSuccess),
+    map(({data}) => {
+      return SaveFileApiActions.savefileSuccess({data});
+    })
   ));
 }
 

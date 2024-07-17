@@ -18,7 +18,7 @@ export const selectRelDirectories = createSelector(
       .filter(value => value && !value.includes('.'))
       .reduce((accum, value) => accum.add(value), new Set<string>())
     const up = state.relPath.length > 0 ? ['..'] : [];
-    return [...up, ...folders];
+    return [...up, ...[...folders].sort()];
   }
 );
 
