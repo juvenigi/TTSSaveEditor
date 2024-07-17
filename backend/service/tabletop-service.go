@@ -47,3 +47,11 @@ func PatchSavefile(path string, jsonp []byte) ([]byte, error) {
 	}
 	return tt.PatchSaveFile(path, original, jsonp)
 }
+
+func AddNewCard(data domain.PartialCard, savePath string, deckPath string) (error, []byte) {
+	return tt.AddCardsToDeck(data, savePath, deckPath)
+}
+
+func DeleteCard(savefileLocation string, path string) (error, []byte) {
+	return tt.RemoveCardFromDeck(savefileLocation, path)
+}

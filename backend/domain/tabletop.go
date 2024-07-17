@@ -1,9 +1,11 @@
 package domain
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/gofiber/fiber/v2/log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -104,6 +106,162 @@ func (tt *Tabletop) PatchSaveFile(path string, original []byte, patches []byte) 
 		return nil, err
 	}
 	return modified, nil
+}
+
+// AddCardsToDeck adds a card to the deck of a save file. The patch is incomplete as it does not include
+// card id, deck id, as well as the card's position in the deck.
+// therefore the operation is not idempotent at this level as the same card can be added multiple times
+func (tt *Tabletop) AddCardsToDeck(newCard PartialCard, savePath string, deckPath string) (error, []byte) {
+	// obtain savefile
+	originalBytes, err := tt.GetFile(savePath)
+	if err != nil {
+		return err, nil
+	}
+	// unmarshal with loose typing in order to be able to navigate to the deck
+	var originalFile interface{}
+	err = json.Unmarshal(originalBytes, &originalFile)
+	if err != nil {
+		return err, nil
+	}
+	// navigate to the deck and recast it to a Deck object via re-marshalling
+	// we will use marshalled deckObject bytes later to obtain the patch
+	tmpTypelessDeck, err := navigateToPath(originalFile, deckPath)
+	if err != nil {
+		return err, nil
+	}
+	var deckObject Deck
+	err, deckMarshalled := remarshal(tmpTypelessDeck, &deckObject)
+	if err != nil {
+		return err, nil
+	}
+	err = deckObject.AppendNewCard(newCard.LuaScript, newCard.LuaScriptState)
+	if err != nil {
+		return err, nil
+	}
+
+	updatedDeck, err := json.Marshal(deckObject)
+	if err != nil {
+		return err, nil
+	}
+	// create a patch for the deck
+	patch, err := createDeckJsonPatch(deckMarshalled, updatedDeck, deckPath, "replace")
+	if err != nil {
+		return err, nil
+	}
+	// implement changes and return the updated file
+	updated, err := tt.PatchSaveFile(savePath, originalBytes, patch)
+	if err != nil {
+		return err, nil
+	}
+	return nil, updated
+}
+
+func getDeckFromSavefile(savePath string, deckPath string, deckObj *Deck) ([]byte, error) {
+	// obtain savefile
+	originalBytes, err := os.ReadFile(savePath)
+	if err != nil {
+		return nil, err
+	}
+	// unmarshal with loose typing in order to be able to navigate to the deck
+	var originalFile interface{}
+	err = json.Unmarshal(originalBytes, &originalFile)
+	if err != nil {
+		return nil, err
+	}
+	// navigate to the deck and recast it to a Deck object via re-marshalling
+	// we will use marshalled deckObject bytes later to obtain the patch
+	tmpTypelessDeck, err := navigateToPath(originalFile, deckPath)
+	if err != nil {
+		return nil, err
+	}
+	err, unmarshalledDeck := remarshal(tmpTypelessDeck, &deckObj)
+	if err != nil {
+		return nil, err
+	}
+	return unmarshalledDeck, nil
+}
+
+func (tt *Tabletop) RemoveCardFromDeck(savePath string, cardPath string) (error, []byte) {
+	var deckPath = cardPath[:strings.LastIndex(cardPath, "/ContainedObjects/")]
+
+	// obtain savefile
+	originalBytes, err := tt.GetFile(savePath)
+	if err != nil {
+		return err, nil
+	}
+	cardIdx, err := strconv.Atoi(cardPath[strings.LastIndex(cardPath, "/")+1:])
+	if err != nil {
+		return err, nil
+	}
+	var originalFile interface{}
+	err = json.Unmarshal(originalBytes, &originalFile)
+	if err != nil {
+		return err, nil
+	}
+	tmpTypelessDeck, err := navigateToPath(originalFile, deckPath)
+	if err != nil {
+		return err, nil
+	}
+	var deckObject Deck
+	err, deckMarshalled := remarshal(tmpTypelessDeck, &deckObject)
+	if err != nil {
+		return err, nil
+	}
+	// find CardID
+	var cardID = deckObject.ContainedObjects[cardIdx].CardID
+
+	// remove deckID of th ecard
+	var idxToRemove = -1
+	for idx, value := range deckObject.DeckIDs {
+		if value == cardID {
+			idxToRemove = idx
+			break
+		}
+	}
+	if idxToRemove == -1 {
+		return errors.New("Card not found in deck"), nil
+	} else {
+		deckObject.DeckIDs = append(deckObject.DeckIDs[:idxToRemove], deckObject.DeckIDs[idxToRemove+1:]...)
+	}
+	deckObject.ContainedObjects = append(deckObject.ContainedObjects[:cardIdx], deckObject.ContainedObjects[cardIdx+1:]...)
+	updatedDeck, err := json.Marshal(deckObject)
+	if err != nil {
+		return err, nil
+	}
+	patch, err := createDeckJsonPatch(deckMarshalled, updatedDeck, deckPath, "replace")
+	if err != nil {
+		return err, nil
+	}
+	// implement changes and return the updated file
+	updated, err := tt.PatchSaveFile(savePath, originalBytes, patch)
+	if err != nil {
+		return err, nil
+	}
+	return nil, updated
+}
+
+func createDeckJsonPatch(originalDeck, updatedDeck []byte, deckPath string, opname string) ([]byte, error) {
+	// create a "relative" patch (relative to the deck, need to adjust the path parameter of each patch operation)
+
+	patch, err := jsonpatch.CreateMergePatch(originalDeck, updatedDeck)
+	if err != nil {
+		return nil, err
+	}
+	log.Info(string(patch))
+	patchObj, err := UnmarshalJsonPatch(opname, patch)
+	if err != nil {
+		return nil, err
+	}
+	// use absolute paths of the deck by prepending the deck's location to each patch operation
+	for idx := range patchObj {
+		patchObj[idx].Path = fmt.Sprintf("%s/%s", deckPath, patchObj[idx].Path)
+		log.Info(patchObj[idx].Path)
+	}
+	patch, err = json.Marshal(patchObj)
+	if err != nil {
+		return nil, err
+	}
+	return patch, nil
 }
 
 // FIXME: this function does work, or the largeestBakNum does not work as advertised

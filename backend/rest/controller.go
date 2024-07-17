@@ -3,6 +3,7 @@ package rest
 import (
 	"TTSBundler/backend/domain"
 	"TTSBundler/backend/service"
+	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 )
@@ -12,6 +13,49 @@ func registerRoutes(app *fiber.App) {
 	app.Get("/api/savefile", getSavefile)
 	app.Patch("/api/savefile", patchSavefile)
 	app.Get("/api/directory", getDirectory)
+	app.Post("/api/card", addNewCard)
+	app.Delete("/api/card", deleteCard)
+}
+
+func deleteCard(ctx *fiber.Ctx) error {
+	savefileLocation := ctx.Query("path")
+	deckJsonPath := ctx.Query("jsonPath")
+	if savefileLocation == "" || deckJsonPath == "" {
+		return fiber.ErrBadRequest
+	}
+	err, result := service.DeleteCard(savefileLocation, deckJsonPath)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	if err := ctx.
+		Type("application/json", "UTF-8").
+		Send(result); err != nil {
+		return fiber.ErrInternalServerError
+	}
+	return nil
+}
+
+func addNewCard(ctx *fiber.Ctx) error {
+	var patchJson domain.PartialCard
+	savefileLocation := ctx.Query("path")
+	deckJsonPath := ctx.Query("jsonPath")
+	if savefileLocation == "" || deckJsonPath == "" {
+		return fiber.ErrBadRequest
+	}
+	err := json.Unmarshal(ctx.Body(), &patchJson)
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+	err, result := service.AddNewCard(patchJson, savefileLocation, deckJsonPath)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	if err := ctx.
+		Type("application/json", "UTF-8").
+		Send(result); err != nil {
+		return fiber.ErrInternalServerError
+	}
+	return nil
 }
 
 func patchSavefile(ctx *fiber.Ctx) error {
