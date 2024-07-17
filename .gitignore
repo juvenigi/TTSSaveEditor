@@ -1,5 +1,5 @@
 # Compiled Angular
-/res/angular/
+/res/*
 /frontend/dist/
 
 # IDEs and editors

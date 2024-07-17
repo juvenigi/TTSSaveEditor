@@ -49,7 +49,13 @@ cd ..
 # build Go backend
 # make sure you're building for the right platform (Windows/Linux/MacOS)
 # this assumes you are not cross-compiling
-go build -o app.exe ../backend/main/main.go
+go build -o app.exe ./backend/main/main.go
+```
+To run, simply execute the compiled binary `app.exe` in the root directory of the project.
+```shell
+@echo off
+.\app.exe --browser=true # opens your default browser to the app's url
+pause
 ```
 
 
