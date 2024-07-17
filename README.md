@@ -17,10 +17,10 @@ and load/edit your save files from there.
 ## Features / Implementation roadmap
 
 - [X] load TTS SaveData
-- [ ] view and search Decks, Bags, and Card Objects
-- [ ] edit/save Cards
-  - [ ] edit an existing Card
-  - [ ] create a new Card / remove a Card
+- [X] view and search Decks, Bags, and Card Objects
+- [X] edit/save Cards
+  - [X] edit an existing Card
+  - [X] create a new Card / remove a Card
 - [ ] Cache currently open Save File
 - [ ] script hot reload / external editor api
   - [ ] sync / notify of divergent state in game/ide/savefile
@@ -43,12 +43,13 @@ cd frontend
 npm i
 npm run build
 # move compiled data to backend's static resources
+rm -r ../res
 cp -r dist/* ../res
-cd ../backend
+cd ..
 # build Go backend
 # make sure you're building for the right platform (Windows/Linux/MacOS)
 # this assumes you are not cross-compiling
-go build -o app.exe ./backend/main/main.go
+go build -o app.exe ../backend/main/main.go
 ```
 
 

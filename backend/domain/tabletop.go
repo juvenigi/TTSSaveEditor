@@ -6,8 +6,6 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -130,20 +128,22 @@ func (tt *Tabletop) BackupSaveFile(path string, data []byte) error {
 	return nil
 }
 
+// FIXME: this does not work as intended, however I do not want to create a copy of a save file for every patch
+// therefore, I need to rework the backup system to store patches intead of full files
 func getLargestBakNum(dir string) int {
 	largestBak := 0
-	entries, _ := os.ReadDir(dir)
-	for _, entry := range entries {
-		segments := strings.Split(entry.Name(), ".")
-		slen := len(segments)
-		if slen > 4 && slen-2 > 0 {
-			bakNumStr := segments[slen-2]
-			num, err := strconv.ParseInt(bakNumStr, 10, 8)
-			if err != nil {
-				continue
-			}
-			largestBak = int(num)
-		}
-	}
+	//entries, _ := os.ReadDir(dir)
+	//for _, entry := range entries {
+	//	segments := strings.Split(entry.Name(), ".")
+	//	slen := len(segments)
+	//	if slen > 4 && slen-2 > 0 {
+	//		bakNumStr := segments[slen-2]
+	//		num, err := strconv.ParseInt(bakNumStr, 10, 8)
+	//		if err != nil {
+	//			continue
+	//		}
+	//		largestBak = int(num)
+	//	}
+	//}
 	return largestBak
 }

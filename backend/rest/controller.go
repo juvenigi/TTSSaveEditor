@@ -8,8 +8,16 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 )
 
+func noCache(c *fiber.Ctx) error {
+	c.Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0")
+	c.Set("Pragma", "no-cache")
+	c.Set("Expires", "0")
+	return c.Next()
+}
+
 func registerRoutes(app *fiber.App) {
-	app.Static("/", "./res/angular/browser")
+	app.Use("/", noCache)
+	app.Static("/", "./res/browser")
 	app.Get("/api/savefile", getSavefile)
 	app.Patch("/api/savefile", patchSavefile)
 	app.Get("/api/directory", getDirectory)

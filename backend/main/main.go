@@ -10,6 +10,7 @@ import (
 )
 
 var editorAPI = flag.Bool("editorapi", false, "listen to external editor API events?")
+var openBrowser = flag.Bool("browser", false, "open browser on start?")
 
 func init() {
 	flag.Parse()
@@ -19,9 +20,11 @@ func main() {
 	if *editorAPI {
 		go tcpSocket.ListenToTabletopApp(":39998")
 	}
-	err := browser.OpenURL("http://localhost:3000")
-	if err != nil {
-		fmt.Println("Error:", err)
+	if *openBrowser {
+		err := browser.OpenURL("http://localhost:3000")
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
 	}
 	if err := rest.CreateSaveEditorBackend().Listen(":3000"); err != nil {
 		log.Fatal(err)
