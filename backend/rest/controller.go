@@ -44,7 +44,7 @@ func deleteCard(ctx *fiber.Ctx) error {
 }
 
 func addNewCard(ctx *fiber.Ctx) error {
-	var patchJson domain.PartialCard
+	var patchJson service.PartialCard
 	savefileLocation := ctx.Query("path")
 	deckJsonPath := ctx.Query("jsonPath")
 	if savefileLocation == "" || deckJsonPath == "" {

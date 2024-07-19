@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 )
 
-func ListenToTabletopApp(addr string) {
+// ListenToAppTCP listens for incoming TCP connections from Tabletop Simulator
+func ListenToAppTCP(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		fmt.Println("[TTS] Error creating listener:", err)
-		os.Exit(1)
+		panic("[TTS] Error creating listener: " + err.Error())
 	}
 	defer listener.Close()
 
@@ -26,7 +25,6 @@ func ListenToTabletopApp(addr string) {
 			fmt.Println("[TTS] Error accepting connection:", err)
 			continue
 		}
-
 		// Handle the connection in a new goroutine
 		go handleConnection(conn)
 	}
@@ -35,11 +33,10 @@ func ListenToTabletopApp(addr string) {
 // load the full json file into memory then log it
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-
 	// Create a buffer to store received data
 	var buffer bytes.Buffer
-	reader := bufio.NewReader(conn)
-
+	var reader = bufio.NewReader(conn)
+	// Read data from the connection until EOF
 	for {
 		// Read data from the connection
 		data, err := reader.ReadBytes('\n')
@@ -52,11 +49,9 @@ func handleConnection(conn net.Conn) {
 			buffer.Write(data)
 			break
 		}
-
 		// Append data to the buffer
 		buffer.Write(data)
 	}
-
 	// Print the received message once
 	fmt.Printf("[TTS] Received message:\n%s\n", buffer.String())
 }

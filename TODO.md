@@ -22,8 +22,33 @@ Diagram:
 - [ ] Rich text editing with BBCode
     - considering that I want to create a graphical card editor, this is not necessary at all
 - [ ] Save Editor API integration
-
+- [ ] fixing TTS shenanigans
+  - [ ] making GUIDs actually unique (can be useful for poorly-written scripts)
+  - [ ] correcting Card/DeckIDs (they break when cloning, for example)
 # Journal
+
+## 18.07.2024
+
+## progress
+_none, it was a skip day_
+- backend: add savefile names to `GET ./api/directory`
+
+## tasks
+- [ ] backend GUID checking
+- [ ] add missing functionality to the backend
+- [ ] feature: max characters
+- [ ] refactor backend (deobfuscate logic)
+- [ ] improve backup functionality
+  - [ ] check if the backup + patch == current savefile
+  - [ ] keep a patchlist instead of saving snapshots (when patches do not result in the savefile, create a new
+    snapshot)
+- [ ] visual upgrades
+  - [ ] use savefile names when listing them in the directory
+- [ ] ngstore savefile selector optimisations
+- [ ] bug: don't discard card changes if the other deck is selected, make the edited card autosave
+- [ ] bug: backup files don't go beyond 0.bak (if 0.bak exists, 1.bak should be created instead of overriding 0.bak)
+- [ ] refile cards
+
 
 ## 17.07.2024
 
@@ -41,22 +66,11 @@ Diagram:
   - Action: remove card from deck
   - (you can now move cards between decks, since you have add and remove)
 - [X] feature: deck/bag selector,
-- [ ] feature: max characters
-- [ ] refactor backend (deobfuscate logic)
-- [ ] improve backup functionality
-  - [ ] check if the backup + patch == current savefile
-  - [ ] keep a patchlist instead of saving snapshots (when patches do not result in the savefile, create a new
-    snapshot)
 - [X] UI upgrades
-  - [ ] improve header (fancy savefile name formatting)
-  - [X] improve directory (visual improvement)
+  - [X] improve header (fancy savefile name formatting)
   - [X] improve directory (savefile names and other metadata, needs backend extensions)
   - [X] improve savefile edit visuals
 
-- [ ] ngstore savefile selector optimisations
-- [ ] bug: don't discard card changes if the other deck is selected, make the edited card autosave
-- [ ] bug: backup files don't go beyond 0.bak (if 0.bak exists, 1.bak should be created instead of overriding 0.bak)
-- [ ] refile cards
 
 ## 16.07.2024
 

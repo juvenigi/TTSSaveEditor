@@ -75,41 +75,39 @@ type Card struct {
 	XmlUI                string                `json:"XmlUI"`
 }
 
-type PartialCard struct {
-	LuaScript      string `json:"LuaScript"`
-	LuaScriptState string `json:"LuaScriptState"`
-}
-
 type Deck struct {
-	GUID                 string                `json:"GUID"`
-	Name                 string                `json:"Name"`
-	Transform            Transform             `json:"Transform"`
-	Nickname             string                `json:"Nickname"`
-	Description          string                `json:"Description"`
-	GMNotes              string                `json:"GMNotes"`
-	AltLookAngle         AltLookAngle          `json:"AltLookAngle"`
-	ColorDiffuse         ColorDiffuse          `json:"ColorDiffuse"`
-	LayoutGroupSortIndex int                   `json:"LayoutGroupSortIndex"`
-	Value                int                   `json:"Value"`
-	Locked               bool                  `json:"Locked"`
-	Grid                 bool                  `json:"Grid"`
-	Snap                 bool                  `json:"Snap"`
-	IgnoreFoW            bool                  `json:"IgnoreFoW"`
-	MeasureMovement      bool                  `json:"MeasureMovement"`
-	DragSelectable       bool                  `json:"DragSelectable"`
-	Autoraise            bool                  `json:"Autoraise"`
-	Sticky               bool                  `json:"Sticky"`
-	Tooltip              bool                  `json:"Tooltip"`
-	GridProjection       bool                  `json:"GridProjection"`
-	HideWhenFaceDown     bool                  `json:"HideWhenFaceDown"`
-	Hands                bool                  `json:"Hands"`
-	SidewaysCard         bool                  `json:"SidewaysCard"`
-	DeckIDs              []int                 `json:"DeckIDs"`
-	CustomDeck           map[string]CustomDeck `json:"CustomDeck"`
-	LuaScript            string                `json:"LuaScript"`
-	LuaScriptState       string                `json:"LuaScriptState"`
-	XmlUI                string                `json:"XmlUI"`
-	ContainedObjects     []Card                `json:"ContainedObjects"` // Assuming the objects are of type Card
+	GUID                 string       `json:"GUID"`
+	Name                 string       `json:"Name"`
+	Transform            Transform    `json:"Transform"`
+	Nickname             string       `json:"Nickname"`
+	Description          string       `json:"Description"`
+	GMNotes              string       `json:"GMNotes"`
+	AltLookAngle         AltLookAngle `json:"AltLookAngle"`
+	ColorDiffuse         ColorDiffuse `json:"ColorDiffuse"`
+	LayoutGroupSortIndex int          `json:"LayoutGroupSortIndex"`
+	Value                int          `json:"Value"`
+	Locked               bool         `json:"Locked"`
+	Grid                 bool         `json:"Grid"`
+	Snap                 bool         `json:"Snap"`
+	IgnoreFoW            bool         `json:"IgnoreFoW"`
+	MeasureMovement      bool         `json:"MeasureMovement"`
+	DragSelectable       bool         `json:"DragSelectable"`
+	Autoraise            bool         `json:"Autoraise"`
+	Sticky               bool         `json:"Sticky"`
+	Tooltip              bool         `json:"Tooltip"`
+	GridProjection       bool         `json:"GridProjection"`
+	HideWhenFaceDown     bool         `json:"HideWhenFaceDown"`
+	Hands                bool         `json:"Hands"`
+	SidewaysCard         bool         `json:"SidewaysCard"`
+	// A bit confusingly named, since it actually lists CardIDs of the cards in the deck, but supposedly helps with
+	// integrity-checking CustomDeck (in case the deck consists of multiple Deck sprites)
+	DeckIDs []int `json:"DeckIDs"`
+	// The keys are the first 3 digits of a card's CardID representing the DeckID
+	CustomDeck       map[string]CustomDeck `json:"CustomDeck"`
+	LuaScript        string                `json:"LuaScript"`
+	LuaScriptState   string                `json:"LuaScriptState"`
+	XmlUI            string                `json:"XmlUI"`
+	ContainedObjects []Card                `json:"ContainedObjects"` // Assuming the objects are of type Card
 }
 
 func (deckObject *Deck) AppendNewCard(luaScript string, luaScriptState string) error {
@@ -162,7 +160,7 @@ func (deckObject *Deck) RemoveCard(cardIdx int) error {
 // AddCardsToDeck adds a card to the deck of a save file. The patch is incomplete as it does not include
 // card id, deck id, as well as the card's position in the deck.
 // therefore the operation is not idempotent at this level as the same card can be added multiple times
-func (tt *Tabletop) AddCardsToDeck(newCard PartialCard, savePath string, deckPath string) (error, []byte) {
+func (tt *Tabletop) AddCardsToDeck(luaScript string, luaScriptState string, savePath string, deckPath string) (error, []byte) {
 	// obtain savefile
 	originalBytes, err := tt.GetFile(savePath)
 	if err != nil {
@@ -185,7 +183,7 @@ func (tt *Tabletop) AddCardsToDeck(newCard PartialCard, savePath string, deckPat
 	if err != nil {
 		return err, nil
 	}
-	err = deckObject.AppendNewCard(newCard.LuaScript, newCard.LuaScriptState)
+	err = deckObject.AppendNewCard(luaScript, luaScriptState)
 	if err != nil {
 		return err, nil
 	}

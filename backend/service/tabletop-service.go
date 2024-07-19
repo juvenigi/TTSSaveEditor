@@ -8,7 +8,7 @@ import (
 
 var tt = domain.NewTabletop()
 
-func GetEntries(path string) (*domain.DirectoryResponse, error) {
+func GetEntries(path string) (*DirectoryResponse, error) {
 	if path != "" {
 		err := tt.SetDirectory(path)
 		if err != nil {
@@ -17,9 +17,9 @@ func GetEntries(path string) (*domain.DirectoryResponse, error) {
 	} else {
 		return nil, errors.New("invalid path")
 	}
-	return &domain.DirectoryResponse{
+	return &DirectoryResponse{
 		Path:    path,
-		Entries: tt.GetSaves(),
+		Entries: GetSaves(tt),
 	}, nil
 }
 
@@ -48,8 +48,13 @@ func PatchSavefile(path string, jsonp []byte) ([]byte, error) {
 	return tt.PatchSaveFile(path, original, jsonp)
 }
 
-func AddNewCard(data domain.PartialCard, savePath string, deckPath string) (error, []byte) {
-	return tt.AddCardsToDeck(data, savePath, deckPath)
+type PartialCard struct {
+	LuaScript      string `json:"LuaScript"`
+	LuaScriptState string `json:"LuaScriptState"`
+}
+
+func AddNewCard(data PartialCard, savePath string, deckPath string) (error, []byte) {
+	return tt.AddCardsToDeck(data.LuaScript, data.LuaScriptState, savePath, deckPath)
 }
 
 func DeleteCard(savefileLocation string, path string) (error, []byte) {

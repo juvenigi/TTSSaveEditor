@@ -33,6 +33,14 @@ func NewSavefile(fullPath string, data []byte) (*SaveFile, error) {
 	return &SaveFile{saveData: data}, err
 }
 
+func (tt *Tabletop) GetAllPaths() []string {
+	var entries []string
+	for str := range tt.saves {
+		entries = append(entries, str)
+	}
+	return entries
+}
+
 // SetDirectory scans a directory and its subdirectories for JSON files,
 // returning a map where the key is the full file path and the value is the SaveFile struct.
 // TODO: do not remove previous SaveFiles unless we are force-reloading
@@ -146,4 +154,9 @@ func getLargestBakNum(dir string) int {
 	//	}
 	//}
 	return largestBak
+}
+
+// TODO implement
+func getUsedGUIDS(file []byte) map[string]bool {
+	return nil
 }
