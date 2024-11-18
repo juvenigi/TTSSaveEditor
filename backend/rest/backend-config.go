@@ -13,5 +13,6 @@ func CreateSaveEditorBackend() *fiber.App {
 		AllowMethods: "GET, HEAD, PUT, PATCH, POST, DELETE",
 	}))
 	registerRoutes(app)
+	registerGDriveRoutes(app)
 	return app
 }
