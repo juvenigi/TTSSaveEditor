@@ -19,10 +19,11 @@ func init() {
 		panic("envvars not set!")
 	}
 
+	// todo: do not hard-code hostname
 	AuthConfig = oauth2.Config{
 		ClientID:     ClientId,
 		ClientSecret: ClientSecret,
-		RedirectURL:  "http://localhost:3000/callback",
+		RedirectURL:  "http://localhost:3000/drive/auth/callback",
 		Scopes:       []string{drive.DriveScope},
 		Endpoint:     google.Endpoint,
 	}
@@ -37,6 +38,7 @@ func SetTokenFromCallback(code string) error {
 	return nil
 }
 
+// todo: supply token source from args
 func GetDriveService(ctx context.Context) (*drive.Service, error) {
 	var src = AuthConfig.TokenSource(ctx, &AuthToken)
 	return drive.NewService(ctx, option.WithTokenSource(src))

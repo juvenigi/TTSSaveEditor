@@ -2,22 +2,23 @@ package grdive
 
 import (
 	"bytes"
+	"context"
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/api/drive/v3"
 	"log"
 )
 
-func ListFiles(ctx *fiber.Ctx) error {
-	service, err := GetDriveService(ctx.Context())
+func ListFiles(ctx *context.Context) (fiber.Map, error) {
+	service, err := GetDriveService(*ctx)
 	if err != nil {
 		log.Printf("Error creating Drive client: %v", err)
-		return err
+		return nil, err
 	}
 
 	r, err := service.Files.List().PageSize(10).Fields("nextPageToken, files(id, name)").Do()
 	if err != nil {
 		log.Printf("Error listing files: %v", err)
-		return err
+		return nil, err
 	}
 
 	files := make([]fiber.Map, len(r.Files))
@@ -28,35 +29,29 @@ func ListFiles(ctx *fiber.Ctx) error {
 		}
 	}
 
-	return ctx.JSON(fiber.Map{
+	return fiber.Map{
 		"files": files,
-	})
+	}, nil
 }
 
-func UploadFile(ctx *fiber.Ctx) error {
+func UploadFile(ctx *context.Context, filename string, payload []byte) (fiber.Map, error) {
 	// Retrieve the Google Drive service
-	service, err := GetDriveService(ctx.Context())
+	service, err := GetDriveService(*ctx)
 	if err != nil {
 		log.Printf("Error creating Drive client: %v", err)
-		return fiber.ErrInternalServerError
+		return nil, err
 	}
-
-	// Extract query parameters and request body
-	filename := ctx.Query("filename", "file.txt")
-	payload := ctx.Body() // Use body content as file data
 	if len(payload) == 0 {
 		log.Printf("Empty payload provided for file upload")
-		return fiber.NewError(fiber.StatusBadRequest, "File content is empty")
+		return nil, err
 	}
 
-	// Create file metadata
-	// Upload file to Google Drive
 	file, err := service.Files.Create(&drive.File{Name: filename}).
 		Media(bytes.NewReader(payload)).
 		Do()
 	if err != nil {
 		log.Printf("Error uploading file: %v", err)
-		return fiber.ErrInternalServerError
+		return nil, err
 	}
 
 	// Set permissions for the uploaded file
@@ -66,14 +61,13 @@ func UploadFile(ctx *fiber.Ctx) error {
 	}).Do()
 	if err != nil {
 		log.Printf("Error setting file permissions: %v", err)
-		return fiber.ErrInternalServerError
+		return nil, err
 	}
 
-	// Prepare the response
-	return ctx.JSON(fiber.Map{
+	return fiber.Map{
 		"message":  "File uploaded successfully",
 		"fileId":   file.Id,
 		"fileName": file.Name,
 		"mimeType": file.MimeType,
-	})
+	}, nil
 }

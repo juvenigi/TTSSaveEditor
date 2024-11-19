@@ -1,11 +1,13 @@
 package main
 
 import (
+	"TTSBundler/backend/grdive"
 	"TTSBundler/backend/rest"
 	tabletopSocket "TTSBundler/backend/tts-socket"
 	"flag"
 	"fmt"
 	"github.com/pkg/browser"
+	"golang.org/x/oauth2"
 	"log"
 )
 
@@ -19,6 +21,10 @@ func init() {
 }
 
 func main() {
+	var err = browser.OpenURL(grdive.AuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline))
+	if err != nil {
+		panic("cannot get API token!")
+	}
 	if *editorAPI {
 		go tabletopSocket.ListenToAppTCP(":39998")
 	}
