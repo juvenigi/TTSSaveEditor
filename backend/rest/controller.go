@@ -23,6 +23,7 @@ func registerRoutes(app *fiber.App) {
 	app.Get("/api/directory", getDirectory)
 	app.Post("/api/card", addNewCard)
 	app.Delete("/api/card", deleteCard)
+	app.Get("/api/urls", getSaveResources)
 }
 
 func deleteCard(ctx *fiber.Ctx) error {
@@ -108,18 +109,32 @@ func getDirectory(ctx *fiber.Ctx) error {
 
 func getSavefile(ctx *fiber.Ctx) error {
 	path := ctx.Query("path")
-	log.Infof("requesting path: %s", path)
 	if path == "" {
 		return fiber.ErrBadRequest
 	}
-	if jsonBytes, err := service.GetSaveJson(path); err != nil {
-		return fiber.ErrInternalServerError
-	} else {
-		if err := ctx.
-			Type("application/json", "UTF-8").
-			Send(jsonBytes); err != nil {
-			return fiber.ErrInternalServerError
-		}
+	log.Infof("requesting path: %s", path)
+	jsonBytes, err := service.GetSaveJson(path)
+	if err != nil {
+		return err
 	}
-	return nil
+	return ctx.
+		Type("application/json", "UTF-8").
+		Send(jsonBytes)
+}
+
+func getSaveResources(ctx *fiber.Ctx) error {
+	path := ctx.Query("path")
+	if path == "" {
+		return fiber.ErrBadRequest
+	}
+	cachePath := ctx.Query("cachePath")
+
+	log.Infof("requesting resource URLs: %s cache: %s", path, cachePath)
+	jsonBytes, err := service.GetSaveResources(path, cachePath)
+	if err != nil {
+		return err
+	}
+	return ctx.
+		Type("application/json", "UTF-8").
+		Send(jsonBytes)
 }

@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	begForToken = flag.Bool("gdrive", false, "open auth consent window to obtain token?")
 	editorAPI   = flag.Bool("editorapi", false, "listen to external editor API events?")
 	openBrowser = flag.Bool("browser", false, "open browser on start?")
 )
@@ -21,9 +22,10 @@ func init() {
 }
 
 func main() {
-	var err = browser.OpenURL(grdive.AuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline))
-	if err != nil {
-		panic("cannot get API token!")
+	if *begForToken {
+		if browser.OpenURL(grdive.AuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)) != nil {
+			panic("cannot get API token!")
+		}
 	}
 	if *editorAPI {
 		go tabletopSocket.ListenToAppTCP(":39998")

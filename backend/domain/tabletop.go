@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+// TODO cleanup this code, make sure the unlocks are deferred if an error may occur.
+
 // tabletop holds a map of save files with a mutex for concurrent access
 type Tabletop struct {
 	saves  map[string]*SaveFile
@@ -90,8 +92,8 @@ func (tt *Tabletop) getSaveFromFS(path string) ([]byte, error) {
 	}
 
 	tt.rwLock.Lock()
+	defer tt.rwLock.Unlock()
 	tt.saves[path] = &SaveFile{saveData: data}
-	tt.rwLock.Unlock()
 
 	return data, nil
 }
