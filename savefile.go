@@ -1,7 +1,7 @@
 package main
 
 import (
-	"TTSBundler/backend/service"
+	"TTSBundler/service"
 	"context"
 )
 

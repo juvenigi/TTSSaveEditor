@@ -1,9 +1,9 @@
 package main
 
 import (
-	"TTSBundler/backend/grdive"
-	"TTSBundler/backend/rest"
-	tabletopSocket "TTSBundler/backend/tts-socket"
+	"TTSBundler/grdive"
+	"TTSBundler/rest"
+	ttssocket "TTSBundler/tts-socket"
 	"context"
 	"embed"
 	"flag"
@@ -18,10 +18,9 @@ import (
 var (
 	begForToken = flag.Bool("gdrive", false, "open auth consent window to obtain token?")
 	editorAPI   = flag.Bool("editorapi", false, "listen to external editor API events?")
-	openBrowser = flag.Bool("browser", false, "open browser on start?")
 )
 
-//go:embed all:/frontend/dist
+//go:embed all:frontend/dist
 var assets embed.FS
 
 func init() {
@@ -35,7 +34,7 @@ func main() {
 		}
 	}
 	if *editorAPI {
-		go tabletopSocket.ListenToAppTCP(":39998")
+		go ttssocket.ListenToAppTCP(":39998")
 	}
 	if err := rest.CreateSaveEditorBackend().Listen(":3000"); err != nil {
 		log.Fatal(err)

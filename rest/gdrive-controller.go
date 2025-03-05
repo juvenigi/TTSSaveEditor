@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"TTSBundler/backend/grdive"
+	"TTSBundler/grdive"
 	"context"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/oauth2"

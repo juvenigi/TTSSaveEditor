@@ -15,9 +15,6 @@ var AuthToken oauth2.Token
 func init() {
 	var ClientId = os.Getenv("TTS_GDIRVE_CLIENT")
 	var ClientSecret = os.Getenv("TTS_GDRIVE_SECRET")
-	if ClientId == "" || ClientSecret == "" {
-		panic("envvars not set!")
-	}
 
 	// todo: do not hard-code hostname
 	AuthConfig = oauth2.Config{
