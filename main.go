@@ -2,7 +2,6 @@ package main
 
 import (
 	"TTSBundler/grdive"
-	"TTSBundler/rest"
 	ttssocket "TTSBundler/tts-socket"
 	"context"
 	"embed"
@@ -12,7 +11,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"golang.org/x/oauth2"
-	"log"
 )
 
 var (
@@ -36,11 +34,11 @@ func main() {
 	if *editorAPI {
 		go ttssocket.ListenToAppTCP(":39998")
 	}
-	if err := rest.CreateSaveEditorBackend().Listen(":3000"); err != nil {
-		log.Fatal(err)
-	}
+	//if err := rest.CreateSaveEditorBackend().Listen(":3000"); err != nil {
+	//	log.Fatal(err)
+	//}
 
-	savefileApi := NewSaveFileAPI(context.Background())
+	app := NewApp(context.Background())
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "wails-sandbox",
@@ -50,8 +48,8 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 0},
-		OnStartup:        savefileApi.startup,
-		Bind:             []any{savefileApi},
+		OnStartup:        app.startup,
+		Bind:             []any{app},
 	})
 
 	if err != nil {

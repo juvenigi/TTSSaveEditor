@@ -1,6 +1,7 @@
 # Compiled Angular
 /res/*
 /frontend/dist/
+/frontend/wailsjs/
 
 # IDEs and editors
 .project
