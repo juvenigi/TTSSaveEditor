@@ -1,6 +1,6 @@
 {
     "$schema": "https://wails.io/schemas/config.v2.json",
-    "name": "wails-sandbox",
+    "name": "tabletop-simulator-save-editor",
     "assetdir": "frontend/dist",
     "frontend:build": "npx ng build",
     "frontend:install": "npm install",

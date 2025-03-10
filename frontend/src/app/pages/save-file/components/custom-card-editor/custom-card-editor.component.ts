@@ -70,7 +70,7 @@ export class CustomCardEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    console.debug("component destroyed: " + this.formGroup.value.path ?? 'unknown path')
+    console.debug("component destroyed: " + (this.formGroup.value.path ?? 'unknown path'))
     if (this.formGroup.dirty) {
       void this.save()
     }
