@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"TTSBundler/backend/domain"
-	"TTSBundler/backend/service"
+	"TTSBundler/domain"
+	service2 "TTSBundler/service"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
@@ -32,7 +32,7 @@ func deleteCard(ctx *fiber.Ctx) error {
 	if savefileLocation == "" || deckJsonPath == "" {
 		return fiber.ErrBadRequest
 	}
-	err, result := service.DeleteCard(savefileLocation, deckJsonPath)
+	err, result := service2.DeleteCard(savefileLocation, deckJsonPath)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -45,7 +45,7 @@ func deleteCard(ctx *fiber.Ctx) error {
 }
 
 func addNewCard(ctx *fiber.Ctx) error {
-	var patchJson service.PartialCard
+	var patchJson service2.PartialCard
 	savefileLocation := ctx.Query("path")
 	deckJsonPath := ctx.Query("jsonPath")
 	if savefileLocation == "" || deckJsonPath == "" {
@@ -55,7 +55,7 @@ func addNewCard(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	err, result := service.AddNewCard(patchJson, savefileLocation, deckJsonPath)
+	err, result := service2.AddNewCard(patchJson, savefileLocation, deckJsonPath)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -74,7 +74,7 @@ func patchSavefile(ctx *fiber.Ctx) error {
 	if path == "" || body == nil {
 		return fiber.ErrBadRequest
 	}
-	if jsonBytes, err := service.PatchSavefile(path, body); err != nil {
+	if jsonBytes, err := service2.PatchSavefile(path, body); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	} else {
 		if err := ctx.
@@ -97,7 +97,7 @@ func getDirectory(ctx *fiber.Ctx) error {
 			return fiber.ErrBadRequest
 		}
 	}
-	data, err := service.GetEntries(path)
+	data, err := service2.GetEntries(path)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
@@ -113,7 +113,7 @@ func getSavefile(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 	log.Infof("requesting path: %s", path)
-	jsonBytes, err := service.GetSaveJson(path)
+	jsonBytes, err := service2.GetSaveJson(path)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func getSaveResources(ctx *fiber.Ctx) error {
 	cachePath := ctx.Query("cachePath")
 
 	log.Infof("requesting resource URLs: %s cache: %s", path, cachePath)
-	jsonBytes, err := service.GetSaveResources(path, cachePath)
+	jsonBytes, err := service2.GetSaveResources(path, cachePath)
 	if err != nil {
 		return err
 	}

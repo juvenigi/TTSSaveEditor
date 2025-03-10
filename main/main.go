@@ -1,9 +1,9 @@
 package main
 
 import (
-	"TTSBundler/backend/grdive"
-	"TTSBundler/backend/rest"
-	tabletopSocket "TTSBundler/backend/tts-socket"
+	"TTSBundler/grdive"
+	"TTSBundler/rest"
+	tabletopSocket "TTSBundler/tts-socket"
 	"context"
 	"embed"
 	"flag"

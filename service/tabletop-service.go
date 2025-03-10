@@ -1,7 +1,7 @@
 package service
 
 import (
-	"TTSBundler/backend/domain"
+	"TTSBundler/domain"
 	"errors"
 	"path/filepath"
 )

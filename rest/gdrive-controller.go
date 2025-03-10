@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"TTSBundler/backend/grdive"
+	grdive2 "TTSBundler/grdive"
 	"context"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/oauth2"
@@ -17,7 +17,7 @@ func registerGDriveRoutes(app *fiber.App) {
 
 // technically I don't need this one (open the web browser directly instead of hosting `/auth/start` endpoint)
 func startAuth(ctx *fiber.Ctx) error {
-	authURL := grdive.AuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	authURL := grdive2.AuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	return ctx.Redirect(authURL, fiber.StatusTemporaryRedirect)
 }
 
@@ -26,7 +26,7 @@ func handleAuthCallback(ctx *fiber.Ctx) error {
 	if code == "" {
 		return fiber.ErrBadRequest
 	}
-	if grdive.SetTokenFromCallback(code) != nil {
+	if grdive2.SetTokenFromCallback(code) != nil {
 		return fiber.ErrInternalServerError
 	}
 	return nil
@@ -34,7 +34,7 @@ func handleAuthCallback(ctx *fiber.Ctx) error {
 
 func listFiles(ctx *fiber.Ctx) error {
 	var cnt context.Context = ctx.Context()
-	res, err := grdive.ListFiles(&cnt)
+	res, err := grdive2.ListFiles(&cnt)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -48,7 +48,7 @@ func testUpload(ctx *fiber.Ctx) error {
 		log.Printf("Empty payload provided for file upload")
 		return fiber.NewError(fiber.StatusBadRequest, "Supplied payload is empty")
 	}
-	res, err := grdive.UploadFile(&reqContext, ctx.Query("filename", "file.txt"), ctx.Body())
+	res, err := grdive2.UploadFile(&reqContext, ctx.Query("filename", "file.txt"), ctx.Body())
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
