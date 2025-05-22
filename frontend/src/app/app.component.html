@@ -1,0 +1,5 @@
+@if (items$ | async; as items) {
+  @for (item of items; track $index) {
+    <div>{{ item }}</div>
+  }
+}
