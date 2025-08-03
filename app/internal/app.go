@@ -38,28 +38,26 @@ func NewCacheManagerApi() *CacheManagerApi {
 func (app *CacheManagerApi) GetTabletopSaves() error {
 	sm := tabletop_save.NewSaveManager(app.propertiesController.GetApplicationProperties())
 
-	filesCh := make(chan tabletop_save.TSSaveFile)
-	defer close(filesCh)
-	errCh := make(chan error)
-	defer close(errCh)
-
-	doneCh, err := sm.GetTabletopSaveFilesAsync(filesCh, errCh)
+	err, filesCh, errCh := sm.GetTabletopSaveFilesAsync()
 	if err != nil {
 		return err
 	}
 
 	for {
 		select {
-		case save := <-filesCh:
+		case save, ok := <-filesCh:
+			if !ok {
+				return nil
+			}
 			view := save.ToView()
 			runtime.EventsEmit(app.ctx, NewFileEvent, view)
-
-		case err := <-errCh:
+		case err, ok := <-errCh:
+			if !ok {
+				return nil
+			}
 			return err
 		case <-app.ctx.Done():
 			return app.ctx.Err()
-		case <-doneCh:
-			return nil
 		}
 	}
 }

@@ -18,23 +18,26 @@ func NewSaveManager(properties properties.ApplicationProperties) SaveManager {
 	return SaveManager{properties: properties}
 }
 
-func (sm *SaveManager) GetTabletopSaveFilesAsync(filesCh chan<- TSSaveFile, errCh chan<- error) (chan struct{}, error) {
-	doneCh := make(chan struct{})
+func (sm *SaveManager) GetTabletopSaveFilesAsync() (error, chan TSSaveFile, chan error) {
+	filesCh := make(chan TSSaveFile)
+	errCh := make(chan error)
 
 	files, err := sm.lsDirForNames()
 	if err != nil {
-		close(doneCh)
-		return doneCh, err
+		close(errCh)
+		close(filesCh)
+		return err, filesCh, errCh
 	}
-
 	go func() {
+		defer close(errCh)
+		defer close(filesCh)
+
 		var wg = new(sync.WaitGroup)
 		for _, file := range files {
 			wg.Add(1)
 			go func(file string) {
 				defer wg.Done()
 				defer util.DeadGopherChannel(errCh)
-
 				if save, err := sm.GetTabletopSaveFile(file); err != nil {
 					errCh <- err
 				} else {
@@ -43,10 +46,9 @@ func (sm *SaveManager) GetTabletopSaveFilesAsync(filesCh chan<- TSSaveFile, errC
 			}(file)
 		}
 		wg.Wait()
-		close(doneCh)
 	}()
 
-	return doneCh, nil
+	return nil, filesCh, errCh
 }
 
 func (sm *SaveManager) GetTabletopSaveFile(loc string) (TSSaveFile, error) {
