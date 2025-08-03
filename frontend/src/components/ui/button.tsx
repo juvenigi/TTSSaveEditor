@@ -6,19 +6,12 @@ import {cn} from "@/lib/utils"
 import {buttonVariants} from "@/components/ui/button-variants.ts";
 
 
-export function Button({
-                    className,
-                    variant,
-                    size,
-                    asChild = false,
-                    ...props
-                }: React.ComponentProps<"button"> &
-    VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-}) {
-    const Comp = asChild ? Slot : "button"
+type BtnProps = React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean };
 
-    return (
-        <Comp data-slot="button" className={cn(buttonVariants({variant, size, className}))}{...props}/>
-    )
+export function Button({className, variant, size, asChild = false, ...props}: BtnProps) {
+  const Comp = asChild ? Slot : "button"
+
+  return (
+    <Comp data-slot="button" className={cn(buttonVariants({variant, size, className}))}{...props}/>
+  )
 }
