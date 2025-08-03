@@ -1,6 +1,6 @@
 import './App.css'
 import {Button} from "@/components/ui/button.tsx";
-import {Greet} from "../wailsjs/go/main/App";
+import {Greet} from "../wailsjs/go/app/App";
 
 function App() {
     return (

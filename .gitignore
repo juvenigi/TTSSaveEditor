@@ -3,3 +3,6 @@
 build/bin
 node_modules
 frontend/dist
+
+resources/img
+!resources/img/imglist.yaml

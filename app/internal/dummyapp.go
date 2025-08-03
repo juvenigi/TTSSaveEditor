@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -11,14 +11,14 @@ type App struct {
 	ctx context.Context
 }
 
-// NewApp creates a new App application struct
-func NewApp() *App {
+// NewDummyApp creates a new App application struct
+func NewDummyApp() *App {
 	return &App{}
 }
 
-// startup is called when the app starts. The context is saved
+// Startup is called when the app starts. The context is saved
 // so we can call the runtime methods
-func (a *App) startup(ctx context.Context) {
+func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
