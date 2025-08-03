@@ -15,6 +15,7 @@
 - handle 'root' resources (i.e. urls not associated with a GUID/Name/Nickname)
 
 # TODOs
+- cleanup console spam
 
 - smart routing
 

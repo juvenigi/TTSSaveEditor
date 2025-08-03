@@ -1,5 +1,4 @@
 import {create} from "zustand/react";
-import {ListForTesting} from "@/store/save-list-test.ts";
 import {z} from "zod";
 
 export const GameSaveFileSchema = z.object({
@@ -30,7 +29,8 @@ export type FileListActions = {
 type FileListStore = FileListState & FileListActions
 
 export const useSaveTableStore = create<FileListStore>((set) => ({
-  ...ListForTesting,
+  loading: "done",
+  files: [],
   addFile: (file) =>
     set((state) => ({
       files: [file, ...state.files],

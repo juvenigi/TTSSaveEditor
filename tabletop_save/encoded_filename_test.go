@@ -1,7 +1,6 @@
 package tabletop_save
 
 import (
-	"log"
 	"strings"
 	"testing"
 )
@@ -12,7 +11,7 @@ func TestDropBoxFile(t *testing.T) {
 	actual := GetCacheFilename(given)
 
 	if strings.Compare(actual, expected) != 0 {
-		log.Fatalf("Expected %s, got %s", expected, actual)
+		t.Fatalf("Expected %s, got %s", expected, actual)
 	}
 }
 
@@ -23,7 +22,7 @@ func TestGetEncodedString(t *testing.T) {
 
 	expected := "httpsexamplecomfilenamepng"
 	if strings.Compare(actual, expected) != 0 {
-		log.Fatal("Expected", expected, "Got", actual)
+		t.Fatal("Expected", expected, "Got", actual)
 	}
 }
 
@@ -34,6 +33,6 @@ func TestGetEncodedString_NoExtensionFile(t *testing.T) {
 
 	expected := "httpssteamusercontentaakamaihdnetugc1752434872401823536686EC0759C08456A15476928722EDDF8DE64AB0F"
 	if strings.Compare(actual, expected) != 0 {
-		log.Fatalln("Expected", expected, "Got", actual)
+		t.Fatal("Expected", expected, "Got", actual)
 	}
 }

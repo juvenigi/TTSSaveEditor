@@ -3,9 +3,7 @@ package app
 import (
 	"context"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"log"
 	"path/filepath"
-	"strconv"
 	"tts-cache-manager-cli/properties"
 	"tts-cache-manager-cli/resource_map"
 	"tts-cache-manager-cli/tabletop_save"
@@ -49,16 +47,13 @@ func (app *CacheManagerApi) GetTabletopSaves() error {
 	if err != nil {
 		return err
 	}
-	counter := 0
+
 	for {
 		select {
 		case save := <-filesCh:
-			log.Println("save file detected")
 			view := save.ToView()
-
-			view.Filename = view.Filename + " debug counter: " + strconv.Itoa(counter)
 			runtime.EventsEmit(app.ctx, NewFileEvent, view)
-			counter++
+
 		case err := <-errCh:
 			return err
 		case <-app.ctx.Done():

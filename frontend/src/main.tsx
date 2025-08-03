@@ -2,7 +2,7 @@ import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import {ensureWailsListenersRegistered} from "@/services/event-registrar.ts";
+import {ensureWailsListenersRegistered} from "@/events/event-registrar.ts";
 
 ensureWailsListenersRegistered()
 
