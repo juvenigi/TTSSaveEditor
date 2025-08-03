@@ -10,6 +10,7 @@
 
 # Backlog / Shelf
 
+- make life harder with eslint (stricter rules)
 - easier interaction with savedata (consolidation, deletion, etc...)
 - fetch resources without needing to use tts
 - handle 'root' resources (i.e. urls not associated with a GUID/Name/Nickname)
