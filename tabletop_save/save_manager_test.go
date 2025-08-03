@@ -9,8 +9,6 @@ import (
 func TestSaveManager_GetTabletopSaveFilesAsync(t *testing.T) {
 	var filesCh = make(chan TSSaveFile)
 	var errCh = make(chan error)
-	defer close(filesCh)
-	defer close(errCh)
 	pp, err := properties.GetDefaultApplicationProperties()
 	if err != nil {
 		t.Fatal(err)

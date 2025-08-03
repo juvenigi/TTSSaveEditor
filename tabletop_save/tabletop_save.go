@@ -21,6 +21,49 @@ type TSSaveFile struct {
 	resourceBundle   []ResourceBundle
 }
 
+type SaveFileView struct {
+	Filename              string `json:"filename"`
+	ObjectCount           int    `json:"objectCount"`
+	UncachedResources     int    `json:"uncachedResources"`
+	CachedRemoteResources int    `json:"cachedRemoteResources"`
+	LocalResources        int    `json:"localResources"`
+	PackedResources       int    `json:"packedResources"`
+}
+
+func (s *TSSaveFile) ToView() SaveFileView {
+	objectCount := len(s.resourceBundle)
+	uncachedRes := 0
+	remoteCached := 0
+	localResources := 0
+	packedResources := 0
+	for _, resourceBundle := range s.resourceBundle {
+		for _, res := range resourceBundle.resources {
+			switch res.status {
+			case Local:
+				localResources++
+			case Remote:
+				uncachedRes++
+			case Packed:
+				packedResources++
+			case Steam:
+				uncachedRes++
+			case RemoteCached:
+				remoteCached++
+			default:
+			}
+		}
+	}
+
+	return SaveFileView{
+		Filename:              filepath.Base(s.savefileLocation),
+		ObjectCount:           objectCount,
+		UncachedResources:     uncachedRes,
+		CachedRemoteResources: remoteCached,
+		LocalResources:        localResources,
+		PackedResources:       packedResources,
+	}
+}
+
 type ResourceBundle struct {
 	jsonPath  string
 	Name      string

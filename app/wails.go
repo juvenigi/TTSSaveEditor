@@ -5,12 +5,11 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	app "tts-cache-manager-cli/app/internal"
+	"tts-cache-manager-cli/app/internal"
 )
 
 func RunWails(assets embed.FS) error {
-
-	dummyApp := app.NewDummyApp()
+	api := app.NewCacheManagerApi()
 
 	return wails.Run(&options.App{
 		Title:  "TabletopResourceManager",
@@ -20,7 +19,7 @@ func RunWails(assets embed.FS) error {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        dummyApp.Startup,
-		Bind:             []interface{}{dummyApp},
+		OnStartup:        api.Startup,
+		Bind:             []interface{}{api},
 	})
 }

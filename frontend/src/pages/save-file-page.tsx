@@ -7,8 +7,11 @@ export default function SaveFilePage() {
   const data = useSaveTableStore(store => store.files)
 
   return (
-    <div className="container mx-auto py-10">
-      <SaveFileTable columns={saveFileTableCols} data={data}/>
-    </div>
+    <>
+      <h1>Save Files</h1>
+      <div className="container mx-auto py-10">
+        <SaveFileTable columns={saveFileTableCols} data={data}/>
+      </div>
+    </>
   )
 }

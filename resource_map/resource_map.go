@@ -29,6 +29,9 @@ func NewPackData(resourceMapFile string) (PackData, error) {
 	var result PackData
 	var yamlPd yamlPackData
 	result.packDataDir = filepath.Dir(resourceMapFile)
+	result.packDataFiles = make(map[string]bool)
+	result.sha3Archive = make(map[string]string)
+	result.urlArchive = make(map[string]string)
 
 	src, err := os.Open(resourceMapFile)
 	if err != nil {
@@ -38,7 +41,6 @@ func NewPackData(resourceMapFile string) (PackData, error) {
 	if entries, err := os.ReadDir(result.packDataDir); err != nil {
 		return result, err
 	} else {
-		result.saveTemplates = make([]string, len(entries))
 		for _, entry := range entries {
 			if entry.IsDir() {
 				continue
@@ -51,22 +53,27 @@ func NewPackData(resourceMapFile string) (PackData, error) {
 		}
 	}
 
-	if err = yaml.NewDecoder(src).Decode(&yamlPd); err != nil {
-		return result, err
-	}
-	if yamlPd.UrlArchive != nil {
-		result.urlArchive = yamlPd.UrlArchive
-	} else {
-		result.sha3Archive = make(map[string]string)
-	}
-	if yamlPd.Sha3Archive != nil {
-		result.sha3Archive = yamlPd.Sha3Archive
-	} else {
-		result.sha3Archive = make(map[string]string)
-	}
+	// todo: could one use a better solution here? (invalid yaml gets skipped without the user knowing)
+	if err = yaml.NewDecoder(src).Decode(&yamlPd); err == nil {
+		if yamlPd.UrlArchive != nil {
+			result.urlArchive = yamlPd.UrlArchive
+		} else {
+			result.sha3Archive = make(map[string]string)
+		}
+		if yamlPd.Sha3Archive != nil {
+			result.sha3Archive = yamlPd.Sha3Archive
+		} else {
+			result.sha3Archive = make(map[string]string)
+		}
 
-	err = result.cleanup()
-	return result, err
+		err = result.cleanup()
+	} else {
+		// todo: consider a more elegant solution
+		//if err := result.FlushToDisk(); err != nil {
+		//	return result, err
+		//}
+	}
+	return result, nil
 }
 
 func (rm *PackData) FlushToDisk() error {

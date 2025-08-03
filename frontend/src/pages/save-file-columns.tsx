@@ -3,30 +3,38 @@ import type {GameSaveFile} from "@/store/save-collection.ts";
 
 export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
   {
-    accessorKey: "filename",
+    accessorKey: "derivedFilename",
     header: "File",
-    // meta: {
-    //   className: "w-[40%] min-w-[200px] max-w-[60vw]",
-    // }
-  },
-  {
-    accessorKey: "objectCount",
-    header: "objects",
+    cell: ({row}) => {
+      const file = row.original as GameSaveFile;
+      return `${file.filename} (${file.objectCount} objects)`;
+    },
+    meta: {
+      className: "w-[60%] min-w-[200px] max-w-[60vw]",
+    }
   },
   {
     accessorKey: "uncachedResources",
-    header: "uncached"
+    header: "☁️"
   },
   {
     accessorKey: "cachedRemoteResources",
-    header: "cached",
+    header: "📥",
   },
   {
     accessorKey: "localResources",
-    header: "local",
+    header: "📁",
   },
   {
     accessorKey: "packedResources",
-    header: "packed",
+    header: "📦",
   }
 ]
+
+export function getColumnMetaClass(input: { columnDef: { meta?: { className?: string } } }): string {
+  if ('columnDef' in input) {
+    return input.columnDef.meta?.className ?? '';
+  }
+
+  return '';
+}

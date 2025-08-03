@@ -2,29 +2,33 @@ package app
 
 import (
 	"context"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"log"
 	"path/filepath"
+	"strconv"
 	"tts-cache-manager-cli/properties"
 	"tts-cache-manager-cli/resource_map"
 	"tts-cache-manager-cli/tabletop_save"
 )
 
-type CacheManagerApp struct {
+const NewFileEvent = "ttsc:newFile"
+
+type CacheManagerApi struct {
 	ctx                  context.Context
 	propertiesController properties.Controller
 	packData             resource_map.PackData
 }
 
-func (app *CacheManagerApp) startup(ctx context.Context) {
+func (app *CacheManagerApi) Startup(ctx context.Context) {
 	app.ctx = ctx
 }
 
-func NewCacheManagerApp() CacheManagerApp {
-	var instance CacheManagerApp
+func NewCacheManagerApi() *CacheManagerApi {
+	var instance = &CacheManagerApi{}
 	instance.propertiesController = properties.NewPropertiesController()
 
 	dir := instance.propertiesController.GetApplicationProperties().PackDataDir
-	packData, err := resource_map.NewPackData(filepath.Join(dir, properties.PackDataYaml))
+	packData, err := resource_map.NewPackData(filepath.Join(dir))
 	if err != nil {
 		panic(err)
 	}
@@ -33,8 +37,7 @@ func NewCacheManagerApp() CacheManagerApp {
 	return instance
 }
 
-// todo: WIP
-func (app *CacheManagerApp) GetTabletopSaves() error {
+func (app *CacheManagerApi) GetTabletopSaves() error {
 	sm := tabletop_save.NewSaveManager(app.propertiesController.GetApplicationProperties())
 
 	filesCh := make(chan tabletop_save.TSSaveFile)
@@ -46,12 +49,16 @@ func (app *CacheManagerApp) GetTabletopSaves() error {
 	if err != nil {
 		return err
 	}
-
+	counter := 0
 	for {
 		select {
 		case save := <-filesCh:
-			log.Println(save)
 			log.Println("save file detected")
+			view := save.ToView()
+
+			view.Filename = view.Filename + " debug counter: " + strconv.Itoa(counter)
+			runtime.EventsEmit(app.ctx, NewFileEvent, view)
+			counter++
 		case err := <-errCh:
 			return err
 		case <-app.ctx.Done():

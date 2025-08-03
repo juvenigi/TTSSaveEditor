@@ -16,6 +16,8 @@
 
 # TODOs
 
+- smart routing
+
 - note to self: it does not make sense to parallelize ResourceBundle retrieval
     - but it does make sense to parallelize http fetching / mass checksum calculation
 
@@ -69,7 +71,9 @@
         - OS-native file select
         - export / pack
         - import / unpack
-- [ ] React frontend
-    - Service / Command Layer
-    - Store / Reducer
-    - selectors / ViewModel
+- [/] React frontend
+    - [ ] TanStack Router
+    - [ ] Service / Command Layer
+    - [ ] Store / Reducer
+    - [X] selectors / ViewModel
+       - [/] File List 

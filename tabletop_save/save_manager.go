@@ -20,10 +20,10 @@ func NewSaveManager(properties properties.ApplicationProperties) SaveManager {
 
 func (sm *SaveManager) GetTabletopSaveFilesAsync(filesCh chan<- TSSaveFile, errCh chan<- error) (chan struct{}, error) {
 	doneCh := make(chan struct{})
-	defer close(doneCh)
 
 	files, err := sm.lsDirForNames()
 	if err != nil {
+		close(doneCh)
 		return doneCh, err
 	}
 
@@ -37,13 +37,13 @@ func (sm *SaveManager) GetTabletopSaveFilesAsync(filesCh chan<- TSSaveFile, errC
 
 				if save, err := sm.GetTabletopSaveFile(file); err != nil {
 					errCh <- err
-					return
 				} else {
 					filesCh <- save
 				}
 			}(file)
 		}
 		wg.Wait()
+		close(doneCh)
 	}()
 
 	return doneCh, nil
