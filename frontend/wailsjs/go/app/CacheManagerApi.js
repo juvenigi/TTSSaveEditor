@@ -5,3 +5,7 @@
 export function GetTabletopSaves() {
   return window['go']['app']['CacheManagerApi']['GetTabletopSaves']();
 }
+
+export function PanicButton() {
+  return window['go']['app']['CacheManagerApi']['PanicButton']();
+}

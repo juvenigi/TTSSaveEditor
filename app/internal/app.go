@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"path/filepath"
 	"tts-cache-manager-cli/properties"
@@ -60,4 +61,8 @@ func (app *CacheManagerApi) GetTabletopSaves() error {
 			return app.ctx.Err()
 		}
 	}
+}
+
+func (app *CacheManagerApi) PanicButton() {
+	panic(errors.New("panic button pressed"))
 }
