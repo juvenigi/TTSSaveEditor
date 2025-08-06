@@ -106,3 +106,20 @@ func TestNewPropertiesController(t *testing.T) {
 		t.Fatal("GameDir is undefined")
 	}
 }
+
+func TestPathSeparator(t *testing.T) {
+	given := "C://foo/bar"
+	actual := filepath.FromSlash(given)
+	if strings.Compare(actual, "C:\\\\foo\\bar") != 0 {
+		t.Fatal("Not what expected:", actual)
+	}
+}
+
+func TestPathSeparatorIdentity(t *testing.T) {
+	given := "C:\\\\foo\\bar"
+	actual := filepath.FromSlash(given)
+	if strings.Compare(actual, given) != 0 {
+		t.Fatal("Expected no change, got:", actual)
+	}
+
+}

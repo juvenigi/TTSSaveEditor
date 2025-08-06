@@ -54,8 +54,10 @@
         - [ ] creating savefile template `.pack.json`
         - [ ] transforming the save template into a valid savefile
     - [ ] zip / unzip the pack
-- [ ] Graceful panic handling (zenity)
-- [ ] tabletop savesfile utils
+- [x] Graceful panic handling (zenity)
+  - actually, wails handles panics automatically
+  - [ ] listen to error events and produce toasts
+- [ ] tabletop savefile utils
     - [ ] patch by jsonpath
     - [ ] modify save data infos
     - [ ] 

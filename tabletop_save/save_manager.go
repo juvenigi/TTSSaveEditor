@@ -18,37 +18,35 @@ func NewSaveManager(properties properties.ApplicationProperties) SaveManager {
 	return SaveManager{properties: properties}
 }
 
-func (sm *SaveManager) GetTabletopSaveFilesAsync() (error, chan TSSaveFile, chan error) {
-	filesCh := make(chan TSSaveFile)
-	errCh := make(chan error)
+func (sm *SaveManager) GetTabletopSaveFilesAsync() (error, chan util.Result[TSSaveFile]) {
+	resChan := make(chan util.Result[TSSaveFile])
 
-	files, err := sm.lsDirForNames()
+	files, err := sm.walkDirForSaveNames()
 	if err != nil {
-		close(errCh)
-		close(filesCh)
-		return err, filesCh, errCh
+		close(resChan)
+		return err, resChan
 	}
+
 	go func() {
-		defer close(errCh)
-		defer close(filesCh)
+		defer close(resChan)
 
 		var wg = new(sync.WaitGroup)
 		for _, file := range files {
 			wg.Add(1)
 			go func(file string) {
 				defer wg.Done()
-				defer util.DeadGopherChannel(errCh)
 				if save, err := sm.GetTabletopSaveFile(file); err != nil {
-					errCh <- err
+					resChan <- util.Result[TSSaveFile]{Err: err}
 				} else {
-					filesCh <- save
+					resChan <- util.Result[TSSaveFile]{Result: save}
 				}
 			}(file)
 		}
+
 		wg.Wait()
 	}()
 
-	return nil, filesCh, errCh
+	return nil, resChan
 }
 
 func (sm *SaveManager) GetTabletopSaveFile(loc string) (TSSaveFile, error) {
@@ -70,19 +68,18 @@ func (sm *SaveManager) GetTabletopSaveFile(loc string) (TSSaveFile, error) {
 	}, nil
 }
 
-func (sm *SaveManager) lsDirForNames() ([]string, error) {
+func (sm *SaveManager) walkDirForSaveNames() ([]string, error) {
 	saveFileDir := filepath.Join(sm.properties.GameDir, "Saves")
-	dir, err := os.ReadDir(saveFileDir)
-	if err != nil {
-		return nil, err
-	}
 
 	var saves []string
-	for _, file := range dir {
-		name := file.Name()
-		if strings.HasSuffix(name, ".json") {
-			saves = append(saves, filepath.Join(saveFileDir, name))
+	err := filepath.Walk(saveFileDir+string(os.PathSeparator), func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() && strings.HasSuffix(path, ".json") {
+			saves = append(saves, path)
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	if metadataIdx := slices.IndexFunc(saves, findSaveData); metadataIdx != -1 {

@@ -2,11 +2,12 @@ package app
 
 import (
 	"context"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"path/filepath"
 	"tts-cache-manager-cli/properties"
 	"tts-cache-manager-cli/resource_map"
 	"tts-cache-manager-cli/tabletop_save"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const NewFileEvent = "ttsc:newFile"
@@ -35,27 +36,32 @@ func NewCacheManagerApi() *CacheManagerApi {
 	return instance
 }
 
+func (app *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
+	applicationProperties := app.propertiesController.GetApplicationProperties()
+
+	return applicationProperties.ToView()
+}
+
 func (app *CacheManagerApi) GetTabletopSaves() error {
 	sm := tabletop_save.NewSaveManager(app.propertiesController.GetApplicationProperties())
 
-	err, filesCh, errCh := sm.GetTabletopSaveFilesAsync()
+	err, resChan := sm.GetTabletopSaveFilesAsync()
 	if err != nil {
 		return err
 	}
 
 	for {
 		select {
-		case save, ok := <-filesCh:
+		case saveRes, ok := <-resChan:
 			if !ok {
 				return nil
 			}
-			view := save.ToView()
+			if saveRes.Err != nil {
+				return saveRes.Err
+			}
+			view := saveRes.Result.ToView()
 			runtime.EventsEmit(app.ctx, NewFileEvent, view)
-		case err, ok := <-errCh:
-			if !ok {
-				return nil
-			}
-			return err
+
 		case <-app.ctx.Done():
 			return app.ctx.Err()
 		}

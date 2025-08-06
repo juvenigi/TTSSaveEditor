@@ -3,7 +3,6 @@ package properties
 import (
 	"bufio"
 	"errors"
-	"gopkg.in/yaml.v3"
 	"io"
 	"log"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -25,17 +26,39 @@ type ApplicationProperties struct {
 	PackDataDir string `yaml:"pack-data-dir"`
 }
 
+type ApplicationPropertiesView struct {
+	OsPathSeparator string
+	GameDir         string
+	PackDataDir     string
+}
+
+func (p *ApplicationProperties) ToView() ApplicationPropertiesView {
+	return ApplicationPropertiesView{
+		OsPathSeparator: string(os.PathSeparator),
+		GameDir:         p.GameDir,
+		PackDataDir:     p.PackDataDir,
+	}
+}
+
 func newProperties(fileContent io.Reader) (ApplicationProperties, error) {
 	properties := ApplicationProperties{}
 
 	if err := yaml.NewDecoder(bufio.NewReader(fileContent)).Decode(&properties); err != nil {
 		return properties, err
 	}
+
+	properties.normalize()
+
 	if err := properties.validate(); err != nil {
 		return properties, err
 	}
 
 	return properties, nil
+}
+
+func (p *ApplicationProperties) normalize() {
+	p.PackDataDir = filepath.FromSlash(p.PackDataDir)
+	p.GameDir = filepath.FromSlash(p.GameDir)
 }
 
 func (p *ApplicationProperties) validate() error {

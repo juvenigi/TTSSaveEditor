@@ -23,6 +23,7 @@ type TSSaveFile struct {
 
 type SaveFileView struct {
 	Filename              string `json:"filename"`
+	Directory             string `json:"directory"`
 	ObjectCount           int    `json:"objectCount"`
 	UncachedResources     int    `json:"uncachedResources"`
 	CachedRemoteResources int    `json:"cachedRemoteResources"`
@@ -56,6 +57,7 @@ func (s *TSSaveFile) ToView() SaveFileView {
 
 	return SaveFileView{
 		Filename:              filepath.Base(s.savefileLocation),
+		Directory:             filepath.Dir(s.savefileLocation),
 		ObjectCount:           objectCount,
 		UncachedResources:     uncachedRes,
 		CachedRemoteResources: remoteCached,

@@ -6,6 +6,11 @@ import (
 	"sync"
 )
 
+type Result[T any] struct {
+	Result T
+	Err    error
+}
+
 type Promise[T any] struct {
 	once sync.Once
 	done chan struct{}

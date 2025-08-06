@@ -21,17 +21,20 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
+    "erasableSyntaxOnly": false, // this seems to be the correct value, but the error persists
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*"
+        "./src/*",
       ]
     }
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "wailsjs"
   ]
 }

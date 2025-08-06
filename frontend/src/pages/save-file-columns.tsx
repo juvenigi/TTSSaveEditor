@@ -7,7 +7,10 @@ export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
     header: "File",
     cell: ({row}) => {
       const file = row.original as GameSaveFile;
-      return `${file.filename} (${file.objectCount} objects)`;
+      const object = file.objectCount === 1 ? "object" : "objects";
+      const isLongFilename = file.filename.length > 30;
+
+      return `${isLongFilename ? "..." + file.filename.substring(file.filename.length - 30) : file.filename} (${file.objectCount} ${object})`;
     },
     meta: {
       className: "w-[60%] min-w-[200px] max-w-[60vw]",

@@ -2,9 +2,9 @@ import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import {ensureWailsListenersRegistered} from "@/events/event-registrar.ts";
+import {ensureWailsInitialized} from "@/events/event-registrar.ts";
 
-ensureWailsListenersRegistered()
+await ensureWailsInitialized()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode> <App/> </StrictMode>,
