@@ -25,22 +25,18 @@ func TestLoadCacheStatus_FileExists(t *testing.T) {
 	}
 
 	res := GameResource{
-		jsonPath:    "not.important.here",
-		resourceUrl: fileAbsFilepath,
-		status:      Remote,
+		JsonPath:    "not.important.here",
+		ResourceUrl: fileAbsFilepath,
+		Status:      Remote,
 	}
+	cache.SetCacheStatus(&res)
 
-	err = cache.doCheckIfCached(&res)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fileScanned, fileOk := cache.resourceCached[filepath.Base(cacheAbsFilepath)]
+	fileScanned, fileOk := cache.ResourceCached[filepath.Base(cacheAbsFilepath)]
 	if !fileScanned || !fileOk {
 		t.Fatal("File not found in cache")
 	}
-	if res.status != RemoteCached {
-		t.Fatal("resource status not set to RemoteCached")
+	if res.Status != RemoteCached {
+		t.Fatal("resource Status not set to RemoteCached")
 	}
 }
 
@@ -51,25 +47,22 @@ func TestLoadCacheStatus_CacheEntryExists(t *testing.T) {
 	file := filepath.Base(fictionalFile)
 	cacheFilename := GetCacheFilename(file)
 
-	cache := GameCache{resourceCached: make(map[string]bool)}
-	cache.resourceCached[cacheFilename] = true
+	cache := GameCache{ResourceCached: make(map[string]bool)}
+	cache.ResourceCached[cacheFilename] = true
 
 	res := GameResource{
-		jsonPath:    "not.important.here",
-		resourceUrl: fictionalFile,
-		status:      0,
+		JsonPath:    "not.important.here",
+		ResourceUrl: fictionalFile,
+		Status:      0,
 	}
 
-	err := cache.doCheckIfCached(&res)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fileScanned, fileOk := cache.resourceCached[cacheFilename]
+	cache.SetCacheStatus(&res)
+	fileScanned, fileOk := cache.ResourceCached[cacheFilename]
 	if !fileScanned || !fileOk {
 		t.Fatal("File not found in cache")
 	}
-	if res.status != RemoteCached {
-		t.Fatal("resource status not set to RemoteCached")
+	if res.Status != RemoteCached {
+		t.Fatal("resource Status not set to RemoteCached")
 	}
 }
 

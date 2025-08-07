@@ -25,12 +25,12 @@ func TestUrlResource_Checksum(t *testing.T) {
 
 	actualRes, err := GetResource("https://cdnb.artstation.com/p/assets/panos/panos/006/685/241/large/a2a289d664d2cde2.jpg")
 	if err != nil {
-		t.Fatalf("failed to calculate checksum: %s", err.Error())
+		t.Fatalf("failed to calculate Checksum: %s", err.Error())
 	}
 	if actualRes.Data == nil {
 		t.Fatalf("actual is nil")
 	}
-	if !bytes.Equal(expected, actualRes.checksum) {
-		t.Fatalf("UrlResource.Checksum returned a wrong checksum")
+	if !bytes.Equal(expected, actualRes.Checksum) {
+		t.Fatalf("UrlResource.Checksum returned a wrong Checksum")
 	}
 }

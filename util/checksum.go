@@ -5,15 +5,15 @@ import (
 	"os"
 )
 
-func GetFileChecksum(fileLoc string) []byte {
+func GetFileAndChecksum(fileLoc string) ([]byte, []byte) {
 	blob, err := os.ReadFile(fileLoc)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 	new256 := sha3.New256()
 	_, err = new256.Write(blob)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	return new256.Sum(nil)
+	return blob, new256.Sum(nil)
 }

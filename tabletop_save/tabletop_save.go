@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"tts-cache-manager-cli/resource_map"
-	"tts-cache-manager-cli/wrapped_io"
 )
 
 const steamApiUrlPrefix = "https://steamusercontent"
@@ -31,6 +29,17 @@ type SaveFileView struct {
 	PackedResources       int    `json:"packedResources"`
 }
 
+// note: may contain duplicates
+func (s *TSSaveFile) GetAllResources() []*GameResource {
+	var resources []*GameResource
+	for _, bundle := range s.resourceBundle {
+		for i := range bundle.resources {
+			resources = append(resources, &bundle.resources[i])
+		}
+	}
+	return resources
+}
+
 func (s *TSSaveFile) ToView() SaveFileView {
 	objectCount := len(s.resourceBundle)
 	uncachedRes := 0
@@ -39,7 +48,7 @@ func (s *TSSaveFile) ToView() SaveFileView {
 	packedResources := 0
 	for _, resourceBundle := range s.resourceBundle {
 		for _, res := range resourceBundle.resources {
-			switch res.status {
+			switch res.Status {
 			case Local:
 				localResources++
 			case Remote:
@@ -75,14 +84,9 @@ type ResourceBundle struct {
 }
 
 type GameResource struct {
-	jsonPath    string
-	resourceUrl string
-	status      ResourceStatus
-}
-
-type ImageResourceResponse struct {
-	resourceUrl string
-	status      ResourceStatus
+	JsonPath    string
+	ResourceUrl string
+	Status      ResourceStatus
 }
 
 type ResourceStatus int
@@ -136,21 +140,21 @@ func (bb *Bundle) MapToResources(packDataDir string) []GameResource {
 	var urls []GameResource
 	for k, v := range bb.ResUrls {
 		urls = append(urls, GameResource{
-			jsonPath:    k,
-			resourceUrl: v,
-			status:      deduceResourceStatus(v, packDataDir),
+			JsonPath:    k,
+			ResourceUrl: v,
+			Status:      deduceResourceStatus(v, packDataDir),
 		})
 	}
 	return urls
 }
 
 type GameCache struct {
-	resourceCached map[string]bool // stores cached filenames
+	ResourceCached map[string]string // stores cached filenames -> complete path
 }
 
 func NewCacheScanner(gameDir string) (GameCache, error) {
 	var result GameCache
-	cachedEntries := make(map[string]bool)
+	cachedEntries := make(map[string]string)
 
 	err := filepath.WalkDir(gameDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -160,7 +164,7 @@ func NewCacheScanner(gameDir string) (GameCache, error) {
 			name := d.Name()
 			name = strings.TrimSuffix(name, filepath.Ext(name))
 
-			cachedEntries[name] = true
+			cachedEntries[name] = path
 		}
 		return nil
 	})
@@ -168,23 +172,23 @@ func NewCacheScanner(gameDir string) (GameCache, error) {
 		return result, err
 	}
 
-	result.resourceCached = cachedEntries
+	result.ResourceCached = cachedEntries
 	return result, nil
 }
 
-func (rv *GameCache) doCheckIfCached(res *GameResource) error {
+func (rv *GameCache) SetCacheStatus(res *GameResource) {
 
-	if res.status == Local || res.status == RemoteCached || res.status == Packed {
-		return nil
+	if res.Status == Local || res.Status == RemoteCached || res.Status == Packed {
+		return
 	}
 
-	base := filepath.Base(res.resourceUrl)
+	base := filepath.Base(res.ResourceUrl)
 	cacheFilename := GetCacheFilename(base)
-	if _, ok := rv.resourceCached[cacheFilename]; ok {
-		res.status = RemoteCached
+	if _, ok := rv.ResourceCached[cacheFilename]; ok {
+		res.Status = RemoteCached
 	}
 
-	return nil
+	return
 }
 
 func deduceResourceStatus(url string, packDir string) ResourceStatus {
@@ -295,38 +299,6 @@ func walkJsonRecur2(node interface{}, path string, result map[string]Bundle) *Bu
 		// pass downstream
 		return partial
 	}
-}
-
-// todo
-func (rs *GameResource) ToPackData(data resource_map.PackData, packdataDir string) (GameResource, error) {
-	result := GameResource{
-		jsonPath:    rs.jsonPath,
-		resourceUrl: rs.resourceUrl,
-		status:      rs.status,
-	}
-
-	switch rs.status {
-	case Failed:
-		return result, fmt.Errorf("failed to remap resource")
-	case Local:
-		destFilename := filepath.Join(packdataDir, filepath.Base(rs.resourceUrl))
-		if err := wrapped_io.CopyFile(rs.resourceUrl, destFilename); err != nil {
-			return result, err
-		}
-		break
-	case Remote:
-		// todo: attempt to download http
-		return result, errors.New("remote resource not yet available")
-	case RemoteCached:
-		//destFilename := filepath.Join(packDataPath, getCachedResourceLoc(rs.resourceUrl))
-	case Steam:
-		return result,
-			errors.New(fmt.Sprintf("resource skipped because it's on Steam: %s", rs.resourceUrl))
-	case Packed:
-		break
-	}
-
-	return result, nil
 }
 
 func getCachedResourceLoc(gameDir string, resourceUrl string) string {

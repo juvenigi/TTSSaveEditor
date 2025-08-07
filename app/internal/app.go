@@ -15,37 +15,36 @@ const NewFileEvent = "ttsc:newFile"
 type CacheManagerApi struct {
 	ctx                  context.Context
 	propertiesController properties.Controller
+	saveManager          tabletop_save.SaveManager
 	packData             resource_map.PackData
 }
 
-func (app *CacheManagerApi) Startup(ctx context.Context) {
-	app.ctx = ctx
+func (api *CacheManagerApi) Startup(ctx context.Context) {
+	api.ctx = ctx
 }
 
 func NewCacheManagerApi() *CacheManagerApi {
-	var instance = &CacheManagerApi{}
-	instance.propertiesController = properties.NewPropertiesController()
-
-	dir := instance.propertiesController.GetApplicationProperties().PackDataDir
+	var api = &CacheManagerApi{}
+	api.propertiesController = properties.NewPropertiesController()
+	api.saveManager = tabletop_save.NewSaveManager(api.propertiesController.GetApplicationProperties())
+	dir := api.propertiesController.GetApplicationProperties().PackDataDir
 	packData, err := resource_map.NewPackData(filepath.Join(dir))
 	if err != nil {
 		panic(err)
 	}
-	instance.packData = packData
+	api.packData = packData
 
-	return instance
+	return api
 }
 
-func (app *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
-	applicationProperties := app.propertiesController.GetApplicationProperties()
+func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
+	applicationProperties := api.propertiesController.GetApplicationProperties()
 
 	return applicationProperties.ToView()
 }
 
-func (app *CacheManagerApi) GetTabletopSaves() error {
-	sm := tabletop_save.NewSaveManager(app.propertiesController.GetApplicationProperties())
-
-	err, resChan := sm.GetTabletopSaveFilesAsync()
+func (api *CacheManagerApi) GetTabletopSaves() error {
+	err, resChan := api.saveManager.GetTabletopSaveFilesAsync()
 	if err != nil {
 		return err
 	}
@@ -60,10 +59,29 @@ func (app *CacheManagerApi) GetTabletopSaves() error {
 				return saveRes.Err
 			}
 			view := saveRes.Result.ToView()
-			runtime.EventsEmit(app.ctx, NewFileEvent, view)
+			runtime.EventsEmit(api.ctx, NewFileEvent, view)
 
-		case <-app.ctx.Done():
-			return app.ctx.Err()
+		case <-api.ctx.Done():
+			return api.ctx.Err()
 		}
 	}
+}
+
+// todo: return a view of PackData instead
+func (api *CacheManagerApi) WriteToPackData(saveLocation string) (error, bool) {
+	gameDir := api.propertiesController.GetApplicationProperties().GameDir
+	saveData, err := api.saveManager.GetTabletopSaveFile(saveLocation)
+	if err != nil {
+		return err, false
+	}
+
+	// todo: atm, this breaks the "clean code" principle of doing only one thing, as we are
+	//  1. mutating pack data
+	//  2. mutating save data
+	//  on the other hand, doing so is hella convenient, I only need to make sure that I have a sync.Once error chan
+	err = api.packData.AddResourcesFromSave(api.ctx, &saveData, gameDir)
+	if err != nil {
+		return err, false
+	}
+	return nil, true
 }
