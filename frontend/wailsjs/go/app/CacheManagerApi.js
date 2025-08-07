@@ -9,3 +9,7 @@ export function GetProperties() {
 export function GetTabletopSaves() {
   return window['go']['app']['CacheManagerApi']['GetTabletopSaves']();
 }
+
+export function WriteToPackData(arg1) {
+  return window['go']['app']['CacheManagerApi']['WriteToPackData'](arg1);
+}

@@ -5,3 +5,5 @@ import {properties} from '../models';
 export function GetProperties():Promise<properties.ApplicationPropertiesView>;
 
 export function GetTabletopSaves():Promise<void>;
+
+export function WriteToPackData(arg1:string):Promise<Error|boolean>;
