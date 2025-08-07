@@ -1,12 +1,28 @@
+# KISS patch
+
+- simplify app properties initialization (you are supposed to receive it from the frontend anyway)
+    - make sure the fallback never fails
+- simplify resource states
+    - local : absolute path
+    - localCache : cache hack
+    - remoteCache : is a remote file but the cache can be found
+    - remote : remote (http) without a cached entry
+    - steam : uncached steam resource, cannot fetch due to no access
+    - packed : remote file or checksum was found in packdata
+
 # Release version 1
 
 - config via yaml located next to exe
     - same goes for pack data
 - fill up pack data
 - savefile management
-    - view savefile entries (image preview, resources, amount of them cached)
+    - (might skip) view savefile entries (image preview, resources, amount of them cached)
     - create pack data
     - erase savefile
+
+# BUG
+
+- Configuration properties / Pack Data is not properly validated on api startup
 
 # Backlog / Shelf
 
@@ -15,10 +31,24 @@
 - fetch resources without needing to use tts
 - handle 'root' resources (i.e. urls not associated with a GUID/Name/Nickname)
 
+# The great bughunt
+
+- ensure consistent init of pack data
+- write down correct json pointer
+- make all tests run
+- eliminate all dead code at this point
+
 # TODOs
+
+- unclean impl.: currently using "Packed" as "Modified" - maybe I should name it appropriately or use a different
+  status?
+
+- jsonPointer copyFrom
+
 - cleanup console spam
 
-- smart routing
+- smart routing ( this can be skipped entirely if we choose to restrict ourselves to overlays, collapsables and
+  sidebars)
 
 - note to self: it does not make sense to parallelize ResourceBundle retrieval
     - but it does make sense to parallelize http fetching / mass checksum calculation
@@ -44,24 +74,30 @@
         - [X] ignore steam items (ask if user wishes to convert it to local data using cache)
             - obsolete because we handle things differently now (no more trying to retrieve http resources, only check
               the pack and tts cache)
-- [/] Initialize the Pack
-    - [X] core PackData functions
-    - [X] Populating PackData
-    - [ ] gracefully handle url resources where the filename is not obvious
-- [/] PackData utils
-    - [/] savefile templates
+- [x] Initialize the Pack
+    - [X] PackData init / core PackData functions
+    - [x] gracefully handle url resources where the filename is not obvious
+        - I learned that TTS is okay with files not having extensions, which is why I will write extensionless files in
+          PackData
+- [x] PackData utils
+    - [x] savefile templates
         - [X] listing present savefile templates
-        - [ ] creating savefile template `.pack.json`
-        - [ ] transforming the save template into a valid savefile
-    - [ ] zip / unzip the pack
-- [x] Graceful panic handling (zenity)
-  - actually, wails handles panics automatically
-  - [ ] listen to error events and produce toasts
-- [ ] tabletop savefile utils
-    - [ ] patch by jsonpath
-    - [ ] modify save data infos
-    - [ ] 
-- [ ] The grand contextification
+        - [x] creating savefile template `.pack.json`
+            - actually flush to disk
+        - [x] transforming the save template into a valid savefile
+    - [x] (skip) zip / unzip the pack
+- [x] tabletop savefile utils
+    - [x] json patch
+    - [x] (skipped, as it is not necessary) modify save data infos
+- [/] Populating PackData
+    - [X] Rename save name on pack data entry/exit
+    - [X] TS_Save pack json versioning
+    - [ ] PackData merge (combine pack data with another packdata)
+        - behavior: override, params: makeBackup
+    - [ ] check all concurrency issues
+    - [ ] do not be sloppy with pointers (make sure they are handled correctly)
+- [X] File Delete (backend)
+- [ ] The grand contextification (find places where it makes sense to cancel operations)
 - [ ] Wails API
     - channel-to-event publishing
     - list savefiles
@@ -76,8 +112,13 @@
         - export / pack
         - import / unpack
 - [/] React frontend
-    - [ ] TanStack Router
+    - [X] TanStack Router
+    - [ ] Add creation / modification date to disambiguate saves 
     - [ ] Service / Command Layer
     - [ ] Store / Reducer
     - [X] selectors / ViewModel
-       - [/] File List 
+        - [/] File List
+- [x] Graceful panic handling (zenity)
+    - actually, wails handles panics automatically
+    - [ ] listen to error events and produce toasts
+ 

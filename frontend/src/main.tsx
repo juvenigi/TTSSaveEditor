@@ -5,7 +5,6 @@ import App from './App.tsx'
 import {ensureWailsInitialized} from "@/events/event-registrar.ts";
 
 await ensureWailsInitialized()
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode> <App/> </StrictMode>,
 )

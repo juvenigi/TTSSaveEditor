@@ -1,0 +1,56 @@
+package internal
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestCacheManagerApi_WriteToPackData(t *testing.T) {
+	t.Log(os.Executable())
+	api := NewCacheManagerApi()
+	api.Startup(t.Context())
+
+	gameDir := api.applicationProperties.GameDir
+	if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_68.json"), "Hmm we have a bug"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCacheManagerApi_ConstructPackedSave(t *testing.T) {
+	t.Log(os.Executable())
+	api := NewCacheManagerApi()
+	api.Startup(t.Context())
+
+	packDir := api.applicationProperties.PackDataDir
+	if err := api.CreateSingleplayerSave(filepath.Join(packDir, "TS_Save_68.pack.json"), "Serrogo testo"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCacheManagerApi_WriteToPackDataWithCache(t *testing.T) {
+	t.Log(os.Executable())
+	api := NewCacheManagerApi()
+	api.Startup(t.Context())
+
+	packDir := api.applicationProperties.PackDataDir
+	if err := api.ConstructPackCachedSave(filepath.Join(packDir, "TS_Save_68.pack.json"), "willYouLoadBruh"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCacheManagerApi_MergePackDataWithAnother(t *testing.T) {
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("executable dir:", filepath.Dir(executable))
+	api := NewCacheManagerApi()
+	api.Startup(t.Context())
+
+	otherLoc := filepath.Join(filepath.Dir(executable), "NeoData")
+
+	if err := api.MergePackDataWithAnother(otherLoc, true); err != nil {
+		t.Fatal(err)
+	}
+}

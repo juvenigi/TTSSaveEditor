@@ -2,11 +2,13 @@ package util
 
 import (
 	"bufio"
-	"gopkg.in/yaml.v3"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 type ImgFetchYaml struct {
@@ -28,25 +30,31 @@ func FetchImgFromYaml(imgDir string, imgYamlFilename string) {
 		resp, err := http.Get(resource)
 		if err != nil {
 			log.Printf("failed to fetch %s: %s\n", resource, err.Error())
-			continue
+			panic("failed to fetch " + resource)
+		}
+		if resp.StatusCode != 200 {
+			panic("failed to fetch " + resource)
 		}
 
-		body := resp.Body
-		defer body.Close()
+		writeToFile(resp, imgDir, filename)
+	}
+}
 
-		fullFilepath := imgDir + "/" + filename
-		file, err := os.Create(fullFilepath)
-		if err != nil {
-			log.Printf("failed to open file %s: %s\n", fullFilepath, err.Error())
-			continue
-		}
-		defer file.Close()
+func writeToFile(resp *http.Response, imgDir string, filename string) {
+	body := resp.Body
+	defer body.Close()
 
-		if _, err := io.Copy(file, body); err != nil {
-			log.Printf("failed to write file %s: %s\n", fullFilepath, err.Error())
-		}
-		if err = file.Sync(); err != nil {
-			panic(err)
-		}
+	fullFilepath := imgDir + "/" + filename
+	file, err := os.Create(fullFilepath)
+	if err != nil {
+		panic("failed to open file: " + fullFilepath)
+	}
+	defer file.Close()
+
+	if _, err := io.Copy(file, body); err != nil {
+		panic(fmt.Errorf("failed to write file %s: %v", fullFilepath, err.Error()))
+	}
+	if err = file.Sync(); err != nil {
+		panic(err)
 	}
 }
