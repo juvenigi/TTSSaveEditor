@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	jsonpatch "github.com/evanphx/json-patch"
 )
 
 const steamApiUrlPrefix = "https://steamusercontent"
@@ -38,6 +41,46 @@ func (s *TSSaveFile) GetAllResources() []*GameResource {
 		}
 	}
 	return resources
+}
+
+func (gr *GameResource) createJsonPatch() string {
+	patchPath := strings.ReplaceAll(gr.JsonPath, ".", "/")
+
+	return fmt.Sprintf(`{"op":"replace","path":"%s", "value":"%s"}`, patchPath, gr.ResourceUrl)
+}
+
+func (s *TSSaveFile) SaveAsPackTemplate() error {
+	file, err := os.ReadFile(s.savefileLocation)
+	if err != nil {
+		return err
+	}
+
+	var patches []string
+	for _, res := range s.GetAllResources() {
+		if res.Status != Packed {
+			continue
+		}
+		patches = append(patches, res.createJsonPatch())
+	}
+	var sb strings.Builder
+	sb.WriteString("[")
+	for _, patch := range patches {
+		sb.WriteString(patch)
+		sb.WriteString(",")
+	}
+	concatenated := []byte(sb.String())
+	finalPatch := append(concatenated[:len(concatenated)-1], []byte("]")...)
+	patch, err := jsonpatch.DecodePatch(finalPatch)
+	if err != nil {
+		return err
+	}
+	modified, err := patch.Apply(file)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s\n", modified)
+
+	return nil
 }
 
 func (s *TSSaveFile) ToView() SaveFileView {

@@ -15,10 +15,20 @@
 - fetch resources without needing to use tts
 - handle 'root' resources (i.e. urls not associated with a GUID/Name/Nickname)
 
+# The great bughunt
+
+- ensure consistent init of pack data
+- write down correct json pointer
+- make all tests run
+- eliminate all dead code at this point
+- 
+
 # TODOs
+
 - cleanup console spam
 
-- smart routing
+- smart routing ( this can be skipped entirely if we choose to restrict ourselves to overlays, collapsables and
+  sidebars)
 
 - note to self: it does not make sense to parallelize ResourceBundle retrieval
     - but it does make sense to parallelize http fetching / mass checksum calculation
@@ -45,23 +55,27 @@
             - obsolete because we handle things differently now (no more trying to retrieve http resources, only check
               the pack and tts cache)
 - [/] Initialize the Pack
-    - [X] core PackData functions
-    - [X] Populating PackData
-    - [ ] gracefully handle url resources where the filename is not obvious
+    - [X] PackData init / core PackData functions
+    - [x] gracefully handle url resources where the filename is not obvious
+        - I learned that TTS is okay with files not having extensions, which is why I will write extensionless files in
+          PackData
+    - [/] Populating PackData
+        - [ ] check all concurrency issues
+            - [ ] make pack data map read access thread-safe (since you may be writing to it concurrently)
+                - for the most part, make sure no parallel writes to pack data will occur
+                    - (a RWLock in api layer will do)
+            - [ ] do not be sloppy with pointers (make sure they are handled correctly)
 - [/] PackData utils
     - [/] savefile templates
         - [X] listing present savefile templates
-        - [ ] creating savefile template `.pack.json`
+        - [x] creating savefile template `.pack.json`
+          - actually flush to disk
         - [ ] transforming the save template into a valid savefile
     - [ ] zip / unzip the pack
-- [x] Graceful panic handling (zenity)
-  - actually, wails handles panics automatically
-  - [ ] listen to error events and produce toasts
 - [ ] tabletop savefile utils
     - [ ] patch by jsonpath
     - [ ] modify save data infos
-    - [ ] 
-- [ ] The grand contextification
+- [ ] The grand contextification (find places where it makes sense to cancel operations)
 - [ ] Wails API
     - channel-to-event publishing
     - list savefiles
@@ -80,4 +94,8 @@
     - [ ] Service / Command Layer
     - [ ] Store / Reducer
     - [X] selectors / ViewModel
-       - [/] File List 
+        - [/] File List
+- [x] Graceful panic handling (zenity)
+    - actually, wails handles panics automatically
+    - [ ] listen to error events and produce toasts
+ 
