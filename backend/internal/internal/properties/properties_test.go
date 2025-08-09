@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"tts-cache-manager-cli/backend/internal/internal/properties/internal"
 )
 
 func newYAMLFixture(content string) io.Reader {
@@ -87,7 +88,7 @@ func TestNewPropertiesController(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfgFilenames := []string{ConfigFileYaml}
+	cfgFilenames := []string{internal.ConfigFileYaml}
 	found := false
 	for _, file := range files {
 		if slices.ContainsFunc(cfgFilenames, func(s string) bool {
