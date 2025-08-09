@@ -133,7 +133,7 @@ func deduceResourceStatus(url string, packDir string) ResourceStatus {
 }
 
 func getCachedResourceLoc(gameDir string, resourceUrl string) string {
-	encodedFilename := internal2.GetCacheFilename(filepath.Base(resourceUrl))
+	encodedFilename := GetCacheFilename(filepath.Base(resourceUrl))
 	var cachedEntry = ""
 
 	found := errors.New("found") // a slightly hacky approach to short-circuit fs walk after the file is found

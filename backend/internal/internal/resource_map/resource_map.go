@@ -14,8 +14,7 @@ import (
 	"strings"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/httpfetcher"
-	tabletop_save2 "tts-cache-manager-cli/backend/internal/internal/tabletop_save"
-	"tts-cache-manager-cli/tabletop_save/internal"
+	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
 	"tts-cache-manager-cli/util"
 
 	"gopkg.in/yaml.v3"
@@ -101,7 +100,7 @@ func (rm *PackData) FlushToDisk() error {
 // filename, count, extension(may be empty)
 var duplicateFilenamePattern = regexp.MustCompile("(.*)-(\\d+)(\\.?.*)$")
 
-func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save2.GameResource, filenames *RwFilenameSlice) error {
+func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
 	var location = strings.TrimPrefix(res.ResourceUrl, "file:///")
 	blob, sum := util.GetFileAndChecksum(location)
 	if sum == nil {
@@ -113,11 +112,11 @@ func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save2.GameRes
 	hashMu.Unlock()
 	if exists {
 		res.ResourceUrl = "pack:///" + packDataFile
-		res.Status = tabletop_save2.Packed
+		res.Status = tabletop_save.Packed
 		return nil
 	}
 
-	var destFilename = internal.GetCacheFilename(filepath.Base(res.ResourceUrl))
+	var destFilename = tabletop_save.GetCacheFilename(filepath.Base(res.ResourceUrl))
 	return writeResource(filenames, destFilename, rm, blob, res)
 }
 
@@ -144,10 +143,10 @@ func NewRwFilenameSlice(packDataDir string) *RwFilenameSlice {
 }
 
 // consider an alternative: instead of writing to pack data immediately, aggregate results via a channel (use seen sync.Map for dedupe)
-func (rm *PackData) AddRemoteFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save2.GameResource, filenames *RwFilenameSlice) error {
-	urlRes, err := httpfetcher.GetResourceAsync(ctx, res)
+func (rm *PackData) AddRemoteFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
+	urlRes, err := httpfetcher.GetResourceAsync(ctx, res.ResourceUrl)
 	if err != nil {
-		res.Status = tabletop_save2.Failed
+		res.Status = tabletop_save.Failed
 		return err
 	}
 
@@ -156,24 +155,24 @@ func (rm *PackData) AddRemoteFile(ctx context.Context, hashMu *sync.Mutex, res *
 	hashMu.Unlock()
 	if ok {
 		if file, err := os.ReadFile(filepath.Join(rm.packDataDir, packFileName)); err == nil {
-			res.Status = tabletop_save2.Failed // todo: re-check pack data consistency if such error is detected
+			res.Status = tabletop_save.Failed // todo: re-check pack data consistency if such error is detected
 			return err
 
 		} else if bytes.Compare(urlRes.Data, file) != 0 {
-			res.Status = tabletop_save2.Failed
+			res.Status = tabletop_save.Failed
 			return errors.New("hash collision / file inconsistency detected (you are a unicorn)")
 		}
 
 		res.ResourceUrl = "pack://" + packFileName
-		res.Status = tabletop_save2.Packed
+		res.Status = tabletop_save.Packed
 		return nil
 	}
 	// first we check the entries ahead of time, then we rely on the singleton nature of the syscalls
-	escapedName := internal.GetCacheFilename(urlRes.Url)
+	escapedName := tabletop_save.GetCacheFilename(urlRes.Url)
 	return writeResource(filenames, escapedName, rm, urlRes.Data, res)
 }
 
-func writeResource(filenames *RwFilenameSlice, destinationName string, rm *PackData, blob []byte, res *tabletop_save2.GameResource) error {
+func writeResource(filenames *RwFilenameSlice, destinationName string, rm *PackData, blob []byte, res *tabletop_save.GameResource) error {
 	filenames.mu.RLock()
 	attempt := 0
 	attemptedName := fmt.Sprintf("%s-%d", destinationName, attempt)
@@ -191,7 +190,7 @@ func writeResource(filenames *RwFilenameSlice, destinationName string, rm *PackD
 
 	written, failedAttempts, criticalErr := attemptToWriteExtLess(rm.packDataDir, destinationName, attempt, blob)
 	if criticalErr != nil {
-		res.Status = tabletop_save2.Failed
+		res.Status = tabletop_save.Failed
 		return criticalErr
 	}
 	filenames.mu.Lock()
@@ -202,16 +201,16 @@ func writeResource(filenames *RwFilenameSlice, destinationName string, rm *PackD
 	filenames.mu.Unlock()
 
 	res.ResourceUrl = "pack://" + written
-	res.Status = tabletop_save2.Packed
+	res.Status = tabletop_save.Packed
 
 	return flushAndUpdate(res, rm, blob, filenames)
 }
 
-func flushAndUpdate(res *tabletop_save2.GameResource, rm *PackData, file []byte, filenames *RwFilenameSlice) error {
-	escapedName := internal.GetCacheFilename(res.ResourceUrl)
+func flushAndUpdate(res *tabletop_save.GameResource, rm *PackData, file []byte, filenames *RwFilenameSlice) error {
+	escapedName := tabletop_save.GetCacheFilename(res.ResourceUrl)
 	written, failedAttempts, criticalErr := attemptToWriteExtLess(rm.packDataDir, escapedName, 0, file)
 	if criticalErr != nil {
-		res.Status = tabletop_save2.Failed
+		res.Status = tabletop_save.Failed
 		return criticalErr
 	}
 	filenames.mu.Lock()
@@ -222,7 +221,7 @@ func flushAndUpdate(res *tabletop_save2.GameResource, rm *PackData, file []byte,
 	filenames.mu.Unlock()
 
 	res.ResourceUrl = "pack://" + written
-	res.Status = tabletop_save2.Packed
+	res.Status = tabletop_save.Packed
 
 	return nil
 }
@@ -258,7 +257,7 @@ func attemptToWriteExtLess(dir string, name string, count int, content []byte) (
 }
 
 // todo: actually, I would like to already have the filepath of the cached filename here
-func (rm *PackData) AddRemoteCachedFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save2.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save2.GameCacheFinder) error {
+func (rm *PackData) AddRemoteCachedFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
 	fpath, ok := scanner.ResourceCached[res.ResourceUrl]
 	if !ok {
 		return errors.New("cached file not found")
@@ -275,11 +274,11 @@ func (rm *PackData) AddRemoteCachedFile(ctx context.Context, hashMu *sync.Mutex,
 
 	if ok {
 		res.ResourceUrl = "pack://" + packDatafile
-		res.Status = tabletop_save2.Packed
+		res.Status = tabletop_save.Packed
 		return nil
 	}
 
-	destinationFilename := internal.GetCacheFilename(res.ResourceUrl)
+	destinationFilename := tabletop_save.GetCacheFilename(res.ResourceUrl)
 	return writeResource(filenames, destinationFilename, rm, file, res)
 }
 
@@ -341,9 +340,9 @@ func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *RwFilenam
 	return mappedFileExists
 }
 
-func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_save2.TSSaveFile, gameDir string) error {
+func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
 	resources := data.GetAllResources()
-	cacheFinder, err := tabletop_save2.InitGameCacheFinder(gameDir)
+	cacheFinder, err := tabletop_save.InitGameCacheFinder(gameDir)
 	if err != nil {
 		return err
 	}
@@ -374,17 +373,17 @@ func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_sav
 		go func() {
 			defer wg.Done()
 			switch resourceRef.Status {
-			case tabletop_save2.Remote, tabletop_save2.RemoteCached:
+			case tabletop_save.Remote, tabletop_save.RemoteCached:
 				if packUrl, ok := rm.urlArchive[resourceRef.ResourceUrl]; ok {
 					resourceRef.ResourceUrl = "pack://" + packUrl
-					resourceRef.Status = tabletop_save2.Packed
+					resourceRef.Status = tabletop_save.Packed
 					return
-				} else if resourceRef.Status == tabletop_save2.Remote {
+				} else if resourceRef.Status == tabletop_save.Remote {
 					_ = rm.AddRemoteFile(ctx, hashMu, resourceRef, filenames)
 				} else {
 					_ = rm.AddRemoteCachedFile(ctx, hashMu, resourceRef, filenames, &cacheFinder)
 				}
-			case tabletop_save2.Local:
+			case tabletop_save.Local:
 				_ = rm.AddLocalFile(hashMu, resourceRef, filenames)
 			default:
 				// no-op

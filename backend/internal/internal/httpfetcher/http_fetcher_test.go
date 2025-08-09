@@ -9,7 +9,7 @@ import (
 )
 
 func TestUrlResource_Checksum(t *testing.T) {
-	given, err := os.Open("../../../resources/img/mistborn.jpg")
+	given, err := os.Open("../../../../resources/img/mistborn.jpg")
 	if err != nil {
 		t.Fatalf("failed to open file: %s", err.Error())
 	}
@@ -23,7 +23,7 @@ func TestUrlResource_Checksum(t *testing.T) {
 	_, _ = new256.Write(allBytes)
 	expected := new256.Sum(nil)
 
-	actualRes, err := GetResource("https://cdnb.artstation.com/p/assets/panos/panos/006/685/241/large/a2a289d664d2cde2.jpg")
+	actualRes, err := GetResourceAsync(t.Context(), "https://cdnb.artstation.com/p/assets/panos/panos/006/685/241/large/a2a289d664d2cde2.jpg")
 	if err != nil {
 		t.Fatalf("failed to calculate Checksum: %s", err.Error())
 	}
@@ -33,4 +33,8 @@ func TestUrlResource_Checksum(t *testing.T) {
 	if !bytes.Equal(expected, actualRes.Checksum) {
 		t.Fatalf("UrlResource.Checksum returned a wrong Checksum")
 	}
+}
+
+func TestUrlResourceAsync(t *testing.T) {
+
 }

@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/evanphx/json-patch v0.5.2
 	github.com/ncruces/zenity v0.10.14
-	github.com/wailsapp/wails/v2 v2.10.2
+	github.com/wailsapp/wails/v2 v2.10.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -16,7 +16,6 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
 	github.com/josephspurrier/goversioninfo v1.5.0 // indirect
 	github.com/labstack/echo/v4 v4.13.4 // indirect

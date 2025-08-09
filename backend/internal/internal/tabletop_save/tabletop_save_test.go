@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
 )
 
 const fileThatExists = "../../../resources/test/pillow-test.json"
@@ -71,7 +70,7 @@ func TestLoadCacheStatus_CacheEntryExists(t *testing.T) {
 
 	// assuming the cached file is in the same dir as main file
 	file := filepath.Base(fictionalFile)
-	cacheFilename := internal.GetCacheFilename(file)
+	cacheFilename := GetCacheFilename(file)
 
 	cache := GameCacheFinder{ResourceCached: make(map[string]string)}
 	cache.ResourceCached[cacheFilename] = ""

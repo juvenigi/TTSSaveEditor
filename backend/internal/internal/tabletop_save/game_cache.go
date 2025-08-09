@@ -4,7 +4,6 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
-	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
 )
 
 // GameCacheFinder is a map from escaped url name -> absolute fs path of cached resource
@@ -42,7 +41,7 @@ func (rv *GameCacheFinder) MutCacheStatus(res *GameResource) {
 	}
 
 	base := filepath.Base(res.ResourceUrl)
-	cacheFilename := internal.GetCacheFilename(base)
+	cacheFilename := GetCacheFilename(base)
 	if _, ok := rv.ResourceCached[cacheFilename]; ok {
 		res.Status = RemoteCached
 	}

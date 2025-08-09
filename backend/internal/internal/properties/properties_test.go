@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 	"tts-cache-manager-cli/backend/internal/internal/properties/internal"
@@ -55,18 +54,7 @@ func TestParseProperties_MissingPropertyKeys(t *testing.T) {
 	}
 }
 
-// todo: dont do this without flags
 func TestGetConfigFilePath(t *testing.T) {
-	origArgs := os.Args
-	t.Log(origArgs)
-	defer func() { os.Args = origArgs }()
-
-	cfgAbs, err := filepath.Abs("./../../../resources/config")
-	if err != nil {
-		t.Fatal(err)
-	}
-	os.Args = []string{"", cfgAbs}
-
 	path := getCfgFilePath()
 	if path == "" {
 		t.Fatal("Expected GetConfigFilePath, got nothing")
@@ -74,7 +62,6 @@ func TestGetConfigFilePath(t *testing.T) {
 	t.Log(path)
 }
 
-// todo: verify after fixing
 func TestNewPropertiesController(t *testing.T) {
 	controller := InitPropertiesController()
 	properties := controller.GetApplicationProperties()
@@ -88,12 +75,10 @@ func TestNewPropertiesController(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfgFilenames := []string{internal.ConfigFileYaml}
+
 	found := false
 	for _, file := range files {
-		if slices.ContainsFunc(cfgFilenames, func(s string) bool {
-			return strings.HasSuffix(s, file.Name())
-		}) {
+		if !file.IsDir() && strings.Compare(file.Name(), internal.ConfigFileYaml) == 0 {
 			t.Logf("file found: %v", filepath.Join(executableDir, file.Name()))
 			found = true
 			continue
@@ -107,6 +92,8 @@ func TestNewPropertiesController(t *testing.T) {
 		t.Fatal("GameDir is undefined")
 	}
 }
+
+// tests for documentation purposes only
 
 func TestPathSeparator(t *testing.T) {
 	given := "C://foo/bar"

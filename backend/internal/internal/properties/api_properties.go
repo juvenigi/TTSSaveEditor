@@ -42,8 +42,3 @@ func InitPropertiesController() Controller {
 func (p *Controller) GetApplicationProperties() ApplicationProperties {
 	return p.applicationProperties
 }
-
-// SetApplicationProperties todo: remove if this is not needed for wails
-func (p *Controller) SetApplicationProperties(applicationProperties ApplicationProperties) {
-	p.applicationProperties = applicationProperties
-}

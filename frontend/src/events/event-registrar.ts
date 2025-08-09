@@ -1,7 +1,7 @@
 import {type GameSaveFile, GameSaveFileSchema, useSaveTableStore} from "@/store/save-collection.ts";
 import {EventsOn} from "../../wailsjs/runtime";
 import {NewFileEvent} from "@/events/event-names.ts";
-import {GetProperties} from "../../wailsjs/go/app/CacheManagerApi";
+import {GetProperties} from "../../wailsjs/go/internal/CacheManagerApi";
 
 let osSeparator = "/";
 
