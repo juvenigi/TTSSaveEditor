@@ -30,7 +30,7 @@ func TestTSSaveFile_SaveAsPackTemplate(t *testing.T) {
 			},
 		},
 	}
-	if _, _, err := save.SaveAsPackTemplate(); err != nil {
+	if _, err := save.PutPackUrls(); err != nil {
 		t.Fatal(err)
 	}
 }

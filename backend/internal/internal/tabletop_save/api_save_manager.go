@@ -6,22 +6,14 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"tts-cache-manager-cli/backend/internal/internal/properties"
 	"tts-cache-manager-cli/util"
 )
 
-type SaveManager struct {
-	properties properties.ApplicationProperties
-}
-
-func NewSaveManager(properties properties.ApplicationProperties) SaveManager {
-	return SaveManager{properties: properties}
-}
-
-func (sm *SaveManager) GetTabletopSaveFilesAsync() (error, chan util.Result[TSSaveFile]) {
+// GetTabletopSaveFilesAsync todo: consider breaking packData-save-properties loop some other way, or put packData and saveProperties into the same package
+func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan util.Result[TSSaveFile]) {
 	resChan := make(chan util.Result[TSSaveFile])
 
-	files, err := sm.walkDirForSaveNames()
+	filenames, err := walkDirForSaveNames(gameDir)
 	if err != nil {
 		close(resChan)
 		return err, resChan
@@ -31,16 +23,16 @@ func (sm *SaveManager) GetTabletopSaveFilesAsync() (error, chan util.Result[TSSa
 		defer close(resChan)
 
 		var wg = new(sync.WaitGroup)
-		for _, file := range files {
+		for _, fileName := range filenames {
 			wg.Add(1)
-			go func(file string) {
+			go func(fileN string) {
 				defer wg.Done()
-				if save, err := sm.GetTabletopSaveFile(file); err != nil {
+				if save, err := GetTabletopSaveFile(fileN, packDataDir); err != nil {
 					resChan <- util.Result[TSSaveFile]{Err: err}
 				} else {
 					resChan <- util.Result[TSSaveFile]{Result: save}
 				}
-			}(file)
+			}(fileName)
 		}
 
 		wg.Wait()
@@ -49,7 +41,7 @@ func (sm *SaveManager) GetTabletopSaveFilesAsync() (error, chan util.Result[TSSa
 	return nil, resChan
 }
 
-func (sm *SaveManager) GetTabletopSaveFile(loc string) (TSSaveFile, error) {
+func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 	var dummy TSSaveFile
 
 	file, err := os.ReadFile(loc)
@@ -57,7 +49,7 @@ func (sm *SaveManager) GetTabletopSaveFile(loc string) (TSSaveFile, error) {
 		return dummy, err
 	}
 
-	bundles, err := ParseResourcesBundles(file, sm.properties.PackDataDir)
+	bundles, err := ParseResourcesBundles(file, packDataDir)
 	if err != nil {
 		return dummy, err
 	}
@@ -68,8 +60,8 @@ func (sm *SaveManager) GetTabletopSaveFile(loc string) (TSSaveFile, error) {
 	}, nil
 }
 
-func (sm *SaveManager) walkDirForSaveNames() ([]string, error) {
-	saveFileDir := filepath.Join(sm.properties.GameDir, "Saves")
+func walkDirForSaveNames(gameDir string) ([]string, error) {
+	saveFileDir := filepath.Join(gameDir, "Saves")
 
 	var saves []string
 	err := filepath.Walk(saveFileDir+string(os.PathSeparator), func(path string, info os.FileInfo, err error) error {

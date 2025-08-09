@@ -8,6 +8,10 @@
     - create pack data
     - erase savefile
 
+# BUG
+
+- Configuration properties / Pack Data is not properly validated on api startup
+
 # Backlog / Shelf
 
 - make life harder with eslint (stricter rules)

@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 	"path/filepath"
-	properties2 "tts-cache-manager-cli/backend/internal/internal/properties"
+	"tts-cache-manager-cli/backend/internal/internal/properties"
 	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
 
@@ -14,8 +14,7 @@ const NewFileEvent = "ttsc:newFile"
 
 type CacheManagerApi struct {
 	ctx                  context.Context
-	propertiesController properties2.Controller
-	saveManager          tabletop_save.SaveManager
+	propertiesController properties.Controller
 	packData             resource_map.PackData
 }
 
@@ -25,10 +24,10 @@ func (api *CacheManagerApi) Startup(ctx context.Context) {
 
 func NewCacheManagerApi() *CacheManagerApi {
 	var api = &CacheManagerApi{}
-	api.propertiesController = properties2.InitPropertiesController()
-	api.saveManager = tabletop_save.NewSaveManager(api.propertiesController.GetApplicationProperties())
+
+	api.propertiesController = properties.InitPropertiesController()
 	dir := api.propertiesController.GetApplicationProperties().PackDataDir
-	packData, err := resource_map.NewPackData(filepath.Join(dir))
+	packData, err := resource_map.InitPackDataFromFile(filepath.Join(dir))
 	if err != nil {
 		panic(err)
 	}
@@ -37,14 +36,18 @@ func NewCacheManagerApi() *CacheManagerApi {
 	return api
 }
 
-func (api *CacheManagerApi) GetProperties() properties2.ApplicationPropertiesView {
+func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
 	applicationProperties := api.propertiesController.GetApplicationProperties()
 
 	return applicationProperties.ToView()
 }
 
 func (api *CacheManagerApi) GetTabletopSaves() error {
-	err, resChan := api.saveManager.GetTabletopSaveFilesAsync()
+	applicationProperties := api.propertiesController.GetApplicationProperties()
+	gameDir := applicationProperties.PackDataDir
+	packDataDir := applicationProperties.PackDataDir
+
+	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(gameDir, packDataDir)
 	if err != nil {
 		return err
 	}
@@ -67,21 +70,25 @@ func (api *CacheManagerApi) GetTabletopSaves() error {
 	}
 }
 
+// WriteToPackData
+//  1. mutating pack data
+//  2. mutating save data
+//
+// todo: verify that the following mutations are done correctly:
 // todo: return a view of PackData instead
-func (api *CacheManagerApi) WriteToPackData(saveLocation string) (error, bool) {
-	gameDir := api.propertiesController.GetApplicationProperties().GameDir
-	saveData, err := api.saveManager.GetTabletopSaveFile(saveLocation)
+func (api *CacheManagerApi) WriteToPackData(saveLocation string) error {
+	applicationProperties := api.propertiesController.GetApplicationProperties()
+	gameDir := applicationProperties.PackDataDir
+	packDataDir := applicationProperties.PackDataDir
+
+	saveData, err := tabletop_save.GetTabletopSaveFile(saveLocation, packDataDir)
 	if err != nil {
-		return err, false
+		return err
 	}
 
-	// todo: atm, this breaks the "clean code" principle of doing only one thing, as we are
-	//  1. mutating pack data
-	//  2. mutating save data
-	//  on the other hand, doing so is hella convenient, I only need to make sure that I have a sync.Once error chan
-	err = api.packData.AddResourcesFromSave(api.ctx, &saveData, gameDir)
-	if err != nil {
-		return err, false
+	if err = api.packData.ImportFromSave(api.ctx, &saveData, gameDir); err != nil {
+		return err
 	}
-	return nil, true
+
+	return nil
 }

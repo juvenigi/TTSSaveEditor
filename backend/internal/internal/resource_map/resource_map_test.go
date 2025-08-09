@@ -2,7 +2,6 @@ package resource_map
 
 import (
 	"io/fs"
-	"os"
 	"testing"
 )
 
@@ -23,32 +22,6 @@ func TestPatternMatching(t *testing.T) {
 		t.Fatalf("duplicateFilenamePattern.FindStringSubmatch returned %d submatches", len(submatch))
 	}
 
-}
-
-func TestGetLargestInteger(t *testing.T) {
-	dirEntries := []os.DirEntry{&MockEntry{isDir: false, name: "foo-2"}, &MockEntry{isDir: true, name: "foo-3"}}
-
-	integer := getLargestInteger(dirEntries, "foo")
-	if integer != 2 {
-		t.Fatal("Expected 2 but got ", integer)
-	}
-}
-
-func TestGetLargestInteger_Empty(t *testing.T) {
-	integer := getLargestInteger([]os.DirEntry{}, "foo")
-	if integer != 0 {
-		t.Fatal("Expected 0 but got ", integer)
-	}
-}
-
-func TestGetLargestInteger_Zero(t *testing.T) {
-	integer := getLargestInteger([]os.DirEntry{&MockEntry{
-		isDir: false,
-		name:  "foo",
-	}}, "foo")
-	if integer != 0 {
-		t.Fatal("Expected 0 but got ", integer)
-	}
 }
 
 type MockEntry struct {

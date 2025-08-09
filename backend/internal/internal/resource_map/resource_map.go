@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/httpfetcher"
@@ -26,13 +25,26 @@ type yamlPackData struct {
 }
 
 type PackData struct {
-	packDataDir   string
-	saveTemplates []string
-	sha3Archive   map[string]string
-	urlArchive    map[string]string
+	packDataDir string
+	sha3Archive map[string]string
+	urlArchive  map[string]string
 }
 
-func NewPackData(resourceMapFile string) (PackData, error) {
+func CreateBlankPackDataYaml(packDataLocation string) error {
+	var yamlData yamlPackData
+	file, err := os.OpenFile(packDataLocation, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if err = yaml.NewEncoder(file).Encode(yamlData); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
 	var result PackData
 	var yamlPd yamlPackData
 	result.packDataDir = filepath.Dir(resourceMapFile)
@@ -44,39 +56,23 @@ func NewPackData(resourceMapFile string) (PackData, error) {
 		return result, err
 	}
 
-	if entries, err := os.ReadDir(result.packDataDir); err != nil {
-		return result, err
-	} else {
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
-			}
-			if strings.HasPrefix(entry.Name(), ".pack.json") {
-				result.saveTemplates = append(result.saveTemplates, entry.Name())
-			}
-		}
-	}
-
 	// todo: could one use a better solution here? (invalid yaml gets skipped without the user knowing)
-	if err = yaml.NewDecoder(src).Decode(&yamlPd); err == nil {
-		if yamlPd.UrlArchive != nil {
-			result.urlArchive = yamlPd.UrlArchive
-		} else {
-			result.sha3Archive = make(map[string]string)
-		}
-		if yamlPd.Sha3Archive != nil {
-			result.sha3Archive = yamlPd.Sha3Archive
-		} else {
-			result.sha3Archive = make(map[string]string)
-		}
-
-		err = result.cleanup()
-	} else {
-		// todo: consider a more elegant solution
-		//if err := result.FlushToDisk(); err != nil {
-		//	return result, err
-		//}
+	if err = yaml.NewDecoder(src).Decode(&yamlPd); err != nil {
+		return result, err
 	}
+	if yamlPd.UrlArchive != nil {
+		result.urlArchive = yamlPd.UrlArchive
+	} else {
+		result.sha3Archive = make(map[string]string)
+	}
+	if yamlPd.Sha3Archive != nil {
+		result.sha3Archive = yamlPd.Sha3Archive
+	} else {
+		result.sha3Archive = make(map[string]string)
+	}
+
+	err = result.cleanup()
+
 	return result, nil
 }
 
@@ -100,27 +96,7 @@ func (rm *PackData) FlushToDisk() error {
 // filename, count, extension(may be empty)
 var duplicateFilenamePattern = regexp.MustCompile("(.*)-(\\d+)(\\.?.*)$")
 
-func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
-	var location = strings.TrimPrefix(res.ResourceUrl, "file:///")
-	blob, sum := util.GetFileAndChecksum(location)
-	if sum == nil {
-		return errors.New("file not found")
-	}
-
-	hashMu.Lock()
-	packDataFile, exists := rm.sha3Archive[hex.EncodeToString(sum)]
-	hashMu.Unlock()
-	if exists {
-		res.ResourceUrl = "pack:///" + packDataFile
-		res.Status = tabletop_save.Packed
-		return nil
-	}
-
-	var destFilename = tabletop_save.GetCacheFilename(filepath.Base(res.ResourceUrl))
-	return writeResource(filenames, destFilename, rm, blob, res)
-}
-
-// avoid repeatedly calling os.ReadDir every time we add a new file.
+// RwFilenameSlice exists to avoid repeatedly calling os.ReadDir every time we add a new file to PackData.
 type RwFilenameSlice struct {
 	mu      *sync.RWMutex
 	entries map[string]struct{}
@@ -142,7 +118,26 @@ func NewRwFilenameSlice(packDataDir string) *RwFilenameSlice {
 	}
 }
 
-// consider an alternative: instead of writing to pack data immediately, aggregate results via a channel (use seen sync.Map for dedupe)
+func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
+	var location = strings.TrimPrefix(res.ResourceUrl, "file:///")
+	blob, sum := util.GetFileAndChecksum(location)
+	if sum == nil {
+		return errors.New("file not found")
+	}
+
+	hashMu.Lock()
+	packDataFile, exists := rm.sha3Archive[hex.EncodeToString(sum)]
+	hashMu.Unlock()
+	if exists {
+		res.ResourceUrl = "pack:///" + packDataFile
+		res.Status = tabletop_save.Packed
+		return nil
+	}
+
+	var destFilename = tabletop_save.GetCacheFilename(filepath.Base(res.ResourceUrl))
+	return rm.writeResource(filenames, destFilename, blob, res)
+}
+
 func (rm *PackData) AddRemoteFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
 	urlRes, err := httpfetcher.GetResourceAsync(ctx, res.ResourceUrl)
 	if err != nil {
@@ -169,10 +164,10 @@ func (rm *PackData) AddRemoteFile(ctx context.Context, hashMu *sync.Mutex, res *
 	}
 	// first we check the entries ahead of time, then we rely on the singleton nature of the syscalls
 	escapedName := tabletop_save.GetCacheFilename(urlRes.Url)
-	return writeResource(filenames, escapedName, rm, urlRes.Data, res)
+	return rm.writeResource(filenames, escapedName, urlRes.Data, res)
 }
 
-func writeResource(filenames *RwFilenameSlice, destinationName string, rm *PackData, blob []byte, res *tabletop_save.GameResource) error {
+func (rm *PackData) writeResource(filenames *RwFilenameSlice, destinationName string, blob []byte, res *tabletop_save.GameResource) error {
 	filenames.mu.RLock()
 	attempt := 0
 	attemptedName := fmt.Sprintf("%s-%d", destinationName, attempt)
@@ -203,10 +198,10 @@ func writeResource(filenames *RwFilenameSlice, destinationName string, rm *PackD
 	res.ResourceUrl = "pack://" + written
 	res.Status = tabletop_save.Packed
 
-	return flushAndUpdate(res, rm, blob, filenames)
+	return rm.flushAndUpdate(res, blob, filenames)
 }
 
-func flushAndUpdate(res *tabletop_save.GameResource, rm *PackData, file []byte, filenames *RwFilenameSlice) error {
+func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte, filenames *RwFilenameSlice) error {
 	escapedName := tabletop_save.GetCacheFilename(res.ResourceUrl)
 	written, failedAttempts, criticalErr := attemptToWriteExtLess(rm.packDataDir, escapedName, 0, file)
 	if criticalErr != nil {
@@ -256,8 +251,7 @@ func attemptToWriteExtLess(dir string, name string, count int, content []byte) (
 	return attemptName, previousAttempts, nil
 }
 
-// todo: actually, I would like to already have the filepath of the cached filename here
-func (rm *PackData) AddRemoteCachedFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
+func (rm *PackData) AddRemoteCachedFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
 	fpath, ok := scanner.ResourceCached[res.ResourceUrl]
 	if !ok {
 		return errors.New("cached file not found")
@@ -279,23 +273,7 @@ func (rm *PackData) AddRemoteCachedFile(ctx context.Context, hashMu *sync.Mutex,
 	}
 
 	destinationFilename := tabletop_save.GetCacheFilename(res.ResourceUrl)
-	return writeResource(filenames, destinationFilename, rm, file, res)
-}
-
-func (rm *PackData) GetPackDataFileFromChecksum(shasum string) (string, bool) {
-	res, ok := rm.sha3Archive[shasum]
-
-	return res, ok
-}
-
-func (rm *PackData) GetUrlArchiveFromUrl(url string) (string, bool) {
-	res, ok := rm.urlArchive[url]
-
-	return res, ok
-}
-
-func (rm *PackData) GetSaveTemplates() []string {
-	return rm.saveTemplates
+	return rm.writeResource(filenames, destinationFilename, file, res)
 }
 
 func (rm *PackData) cleanup() error {
@@ -340,6 +318,25 @@ func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *RwFilenam
 	return mappedFileExists
 }
 
+func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
+	var err error
+
+	if err = rm.AddResourcesFromSave(ctx, data, gameDir); err != nil {
+		return err
+	}
+
+	modifiedJsonBlob, err := data.PutPackUrls()
+	if err != nil {
+		return err
+	}
+
+	if err = rm.WriteSaveToData(data.GetSaveName(), modifiedJsonBlob); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
 	resources := data.GetAllResources()
 	cacheFinder, err := tabletop_save.InitGameCacheFinder(gameDir)
@@ -381,7 +378,7 @@ func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_sav
 				} else if resourceRef.Status == tabletop_save.Remote {
 					_ = rm.AddRemoteFile(ctx, hashMu, resourceRef, filenames)
 				} else {
-					_ = rm.AddRemoteCachedFile(ctx, hashMu, resourceRef, filenames, &cacheFinder)
+					_ = rm.AddRemoteCachedFile(hashMu, resourceRef, filenames, &cacheFinder)
 				}
 			case tabletop_save.Local:
 				_ = rm.AddLocalFile(hashMu, resourceRef, filenames)
@@ -394,42 +391,35 @@ func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_sav
 	return nil
 }
 
-func getUniqueFilename(dir string, filename string) (string, error) {
-	var fileExt string
-
-	matches := duplicateFilenamePattern.FindStringSubmatch(filename)
-	if len(matches) == 4 {
-		filename = matches[1]
-		fileExt = matches[3]
-	} else {
-		fileExt = filepath.Ext(filename)
-	}
-
-	dirEntries, err := os.ReadDir(dir)
+// note: this is not thread safe
+func (rm *PackData) WriteSaveToData(originalName string, blob []byte) error {
+	var candidateName = strings.TrimSuffix(originalName, ".json")
+	dirEntries, err := os.ReadDir(rm.packDataDir)
 	if err != nil {
-		return "", err
+		return err
 	}
-	largest := getLargestInteger(dirEntries, filename)
-	return formatPackDataFilename(filename, largest, fileExt), nil
-}
-
-func formatPackDataFilename(filename string, largest int, fileExt string) string {
-	return fmt.Sprintf("%s-%d%s", filename, largest, fileExt)
-}
-
-func getLargestInteger(readDir []os.DirEntry, filename string) int {
-	largest := 0
-	for _, entry := range readDir {
-		if entry.IsDir() {
-			continue
-		} else if strings.HasPrefix(entry.Name(), filename) {
-			submatch := duplicateFilenamePattern.FindStringSubmatch(entry.Name())
-			if submatch == nil {
-				continue
-			} else if value, err := strconv.Atoi(submatch[2]); err == nil && value > largest {
-				largest = value
-			}
+	nameSet := make(map[string]struct{})
+	for _, entry := range dirEntries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".pack.json") {
+			nameSet[entry.Name()] = struct{}{}
 		}
 	}
-	return largest
+	if _, ok := nameSet[candidateName+".pack.json"]; !ok {
+		if err = os.WriteFile(filepath.Join(rm.packDataDir, candidateName+".pack.json"), blob, 0644); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	counter := 0
+	for {
+		candidateName = fmt.Sprintf("%s-%d", candidateName, counter)
+		if _, ok := nameSet[candidateName+".pack.json"]; !ok {
+			if err = os.WriteFile(filepath.Join(rm.packDataDir, candidateName+".pack.json"), blob, 0644); err != nil {
+				return err
+			}
+			return nil
+		}
+		counter++
+	}
 }

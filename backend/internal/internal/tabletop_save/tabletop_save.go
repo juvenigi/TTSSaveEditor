@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	internal2 "tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
+	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
 
 	jsonpatch "github.com/evanphx/json-patch"
 )
@@ -42,12 +42,27 @@ func (s *TSSaveFile) GetAllResources() []*GameResource {
 	return resources
 }
 
-func (s *TSSaveFile) SaveAsPackTemplate() (string, []byte, error) {
+func (s *TSSaveFile) PutPackUrls() ([]byte, error) {
 	file, err := os.ReadFile(s.savefileLocation)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
+	finalPatch := s.getJsonPatchBytes()
+	patch, err := jsonpatch.DecodePatch(finalPatch)
+	if err != nil {
+		return nil, err
+	}
+	modified, err := patch.Apply(file)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("%s\n", modified)
+
+	return modified, nil
+}
+
+func (s *TSSaveFile) getJsonPatchBytes() []byte {
 	var patches []string
 	for _, res := range s.GetAllResources() {
 		if res.Status != Packed {
@@ -63,17 +78,8 @@ func (s *TSSaveFile) SaveAsPackTemplate() (string, []byte, error) {
 	}
 	concatenated := []byte(sb.String())
 	finalPatch := append(concatenated[:len(concatenated)-1], []byte("]")...)
-	patch, err := jsonpatch.DecodePatch(finalPatch)
-	if err != nil {
-		return "", nil, err
-	}
-	modified, err := patch.Apply(file)
-	if err != nil {
-		return "", nil, err
-	}
-	log.Printf("%s\n", modified)
 
-	return s.savefileLocation, modified, nil
+	return finalPatch
 }
 
 func (s *TSSaveFile) ToView() SaveFileView {
@@ -109,6 +115,10 @@ func (s *TSSaveFile) ToView() SaveFileView {
 		LocalResources:        localResources,
 		PackedResources:       packedResources,
 	}
+}
+
+func (s *TSSaveFile) GetSaveName() string {
+	return filepath.Base(s.savefileLocation)
 }
 
 func normalize(str *string) string {
@@ -171,9 +181,9 @@ func ParseResourcesBundles(blob []byte, packDir string) ([]ResourceBundle, error
 }
 
 func GetResourcesFromUnmarshalledJson(data any, packDir string) []ResourceBundle {
-	bundleMap := make(map[string]internal2.Bundle)
+	bundleMap := make(map[string]internal.Bundle)
 
-	_ = internal2.AggregateBundleRecur(data, "", bundleMap)
+	_ = internal.AggregateBundleRecur(data, "", bundleMap)
 
 	var results []ResourceBundle
 	for k, bundle := range bundleMap {
@@ -182,7 +192,7 @@ func GetResourcesFromUnmarshalledJson(data any, packDir string) []ResourceBundle
 	return results
 }
 
-func MapToResourceBundle(bb *internal2.Bundle, jsonPath string, packDataDir string) ResourceBundle {
+func MapToResourceBundle(bb *internal.Bundle, jsonPath string, packDataDir string) ResourceBundle {
 	return ResourceBundle{
 		JsonPointer: jsonPath,
 		Guid:        normalize(bb.Guid),
@@ -192,7 +202,7 @@ func MapToResourceBundle(bb *internal2.Bundle, jsonPath string, packDataDir stri
 	}
 }
 
-func MapToResources(bb *internal2.Bundle, packDataDir string) []GameResource {
+func MapToResources(bb *internal.Bundle, packDataDir string) []GameResource {
 	var urls []GameResource
 	for k, v := range bb.ResUrls {
 		urls = append(urls, GameResource{

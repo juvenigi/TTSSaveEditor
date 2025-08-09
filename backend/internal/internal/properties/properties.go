@@ -2,7 +2,6 @@ package properties
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"log"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"tts-cache-manager-cli/backend/internal/internal/properties/internal"
+	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 
 	"gopkg.in/yaml.v3"
 )
@@ -59,18 +59,20 @@ func (p *ApplicationProperties) validate() error {
 		return err
 	}
 
-	dir, packDataIndex := filepath.Split(p.PackDataDir)
-	entries, err := os.ReadDir(dir)
+	entries, err := os.ReadDir(p.PackDataDir)
 	if err != nil {
 		return err
 	}
 
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.Compare(entry.Name(), packDataIndex) == 0 {
+		if !entry.IsDir() && strings.Compare(entry.Name(), p.PackDataDir) == 0 {
 			return nil
 		}
 	}
-	return errors.New("could not find pack data")
+	if err = resource_map.CreateBlankPackDataYaml(filepath.Join(p.PackDataDir, internal.PackDataYaml)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // todo: handle this more gracefully with a flag, don't use raw position-based arg we are not in the 20th century
