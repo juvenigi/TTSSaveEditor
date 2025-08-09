@@ -14,7 +14,7 @@ func newYAMLFixture(content string) io.Reader {
 }
 
 func TestParseProperties_ValidYAMLConfigFile(t *testing.T) {
-	properties, err2 := writeDefaultProperties()
+	properties, err2 := WriteDefaultProperties()
 	if err2 != nil {
 		t.Fatal(err2)
 	}
@@ -75,7 +75,7 @@ func TestGetConfigFilePath(t *testing.T) {
 
 // todo: verify after fixing
 func TestNewPropertiesController(t *testing.T) {
-	controller := NewPropertiesController()
+	controller := InitPropertiesController()
 	properties := controller.GetApplicationProperties()
 	t.Log(properties)
 	executable, err := os.Executable()

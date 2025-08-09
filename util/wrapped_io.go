@@ -1,4 +1,4 @@
-package wrapped_io
+package util
 
 import (
 	"io"

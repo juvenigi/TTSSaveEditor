@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"tts-cache-manager-cli/properties"
+	"tts-cache-manager-cli/backend/internal/internal/properties"
 	"tts-cache-manager-cli/util"
 )
 

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
 )
 
 const fileThatExists = "../../../resources/test/pillow-test.json"
@@ -15,14 +16,14 @@ func TestTSSaveFile_SaveAsPackTemplate(t *testing.T) {
 	save := TSSaveFile{
 		savefileLocation: "../resources/test/pillow-test.json",
 		resourceBundle: []ResourceBundle{
-			ResourceBundle{
-				jsonPath: "",
-				Name:     "",
-				Nickname: "",
-				Guid:     "",
+			{
+				JsonPointer: "",
+				Name:        "",
+				Nickname:    "",
+				Guid:        "",
 				resources: []GameResource{
-					GameResource{
-						JsonPath:    "/ObjectStates/0/CustomMesh/MeshURL",
+					{
+						JsonPointer: "/ObjectStates/0/CustomMesh/MeshURL",
 						ResourceUrl: "packed://ohyes",
 						Status:      Packed,
 					},
@@ -30,8 +31,8 @@ func TestTSSaveFile_SaveAsPackTemplate(t *testing.T) {
 			},
 		},
 	}
-	if errr := save.SaveAsPackTemplate(); errr != nil {
-		t.Fatal(errr)
+	if _, _, err := save.SaveAsPackTemplate(); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -44,17 +45,17 @@ func TestLoadCacheStatus_FileExists(t *testing.T) {
 	}
 	cacheDir := filepath.Dir(cacheFileThatExists)
 
-	cache, err := NewCacheScanner(cacheDir)
+	cache, err := InitGameCacheFinder(cacheDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	res := GameResource{
-		JsonPath:    "not.important.here",
+		JsonPointer: "not.important.here",
 		ResourceUrl: fileAbsFilepath,
 		Status:      Remote,
 	}
-	cache.SetCacheStatus(&res)
+	cache.MutCacheStatus(&res)
 	//
 	//fileScanned, fileOk := cache.ResourceCached[filepath.Base(cacheAbsFilepath)]
 	//if !fileScanned || !fileOk {
@@ -70,18 +71,18 @@ func TestLoadCacheStatus_CacheEntryExists(t *testing.T) {
 
 	// assuming the cached file is in the same dir as main file
 	file := filepath.Base(fictionalFile)
-	cacheFilename := GetCacheFilename(file)
+	cacheFilename := internal.GetCacheFilename(file)
 
-	cache := GameCache{ResourceCached: make(map[string]string)}
+	cache := GameCacheFinder{ResourceCached: make(map[string]string)}
 	cache.ResourceCached[cacheFilename] = ""
 
 	res := GameResource{
-		JsonPath:    "not.important.here",
+		JsonPointer: "not.important.here",
 		ResourceUrl: fictionalFile,
 		Status:      0,
 	}
 
-	//cache.SetCacheStatus(&res)
+	//cache.MutCacheStatus(&res)
 	//fileScanned, fileOk := cache.ResourceCached[cacheFilename]
 	//if !fileScanned || !fileOk {
 	//	t.Fatal("File not found in cache")

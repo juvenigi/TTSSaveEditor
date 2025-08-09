@@ -1,8 +1,8 @@
-package app
+package backend
 
 import (
 	"embed"
-	"tts-cache-manager-cli/app/internal"
+	"tts-cache-manager-cli/backend/internal"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -10,7 +10,7 @@ import (
 )
 
 func RunWails(assets embed.FS) error {
-	api := app.NewCacheManagerApi()
+	api := internal.NewCacheManagerApi()
 
 	return wails.Run(&options.App{
 		Title:  "TabletopResourceManager",

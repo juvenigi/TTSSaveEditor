@@ -9,13 +9,13 @@ type Controller struct {
 	applicationProperties  ApplicationProperties
 }
 
-// NewPropertiesController
+// InitPropertiesController
 // panic justification: this struct is intended to be a singleton that never gets restarted and there is no recoverable
 // state if the properties are not loaded
-func NewPropertiesController() Controller {
+func InitPropertiesController() Controller {
 	cfgPath := getCfgFilePath()
 	if cfgPath == "" {
-		defaultCfg, err := writeDefaultProperties()
+		defaultCfg, err := WriteDefaultProperties()
 		if err != nil {
 			panic(err)
 		}
@@ -46,21 +46,4 @@ func (p *Controller) GetApplicationProperties() ApplicationProperties {
 // SetApplicationProperties todo: remove if this is not needed for wails
 func (p *Controller) SetApplicationProperties(applicationProperties ApplicationProperties) {
 	p.applicationProperties = applicationProperties
-}
-
-func GetDefaultApplicationProperties() (ApplicationProperties, error) {
-	var blank ApplicationProperties
-	gameDir, err := getDefaultGameDir()
-	if err != nil {
-		return blank, err
-	}
-	packData, err := createDefaultPackData()
-	if err != nil {
-		return blank, err
-	}
-
-	return ApplicationProperties{
-		GameDir:     gameDir,
-		PackDataDir: packData,
-	}, nil
 }

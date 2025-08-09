@@ -1,4 +1,4 @@
-package tabletop_save
+package internal
 
 import (
 	"regexp"

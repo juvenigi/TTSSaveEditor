@@ -3,7 +3,7 @@ package tabletop_save
 import (
 	"testing"
 	"time"
-	"tts-cache-manager-cli/properties"
+	"tts-cache-manager-cli/backend/internal/internal/properties"
 )
 
 func TestSaveManager_GetTabletopSaveFilesAsync(t *testing.T) {

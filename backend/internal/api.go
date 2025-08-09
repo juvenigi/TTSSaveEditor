@@ -1,11 +1,11 @@
-package app
+package internal
 
 import (
 	"context"
 	"path/filepath"
-	"tts-cache-manager-cli/properties"
-	"tts-cache-manager-cli/resource_map"
-	"tts-cache-manager-cli/tabletop_save"
+	properties2 "tts-cache-manager-cli/backend/internal/internal/properties"
+	"tts-cache-manager-cli/backend/internal/internal/resource_map"
+	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -14,7 +14,7 @@ const NewFileEvent = "ttsc:newFile"
 
 type CacheManagerApi struct {
 	ctx                  context.Context
-	propertiesController properties.Controller
+	propertiesController properties2.Controller
 	saveManager          tabletop_save.SaveManager
 	packData             resource_map.PackData
 }
@@ -25,7 +25,7 @@ func (api *CacheManagerApi) Startup(ctx context.Context) {
 
 func NewCacheManagerApi() *CacheManagerApi {
 	var api = &CacheManagerApi{}
-	api.propertiesController = properties.NewPropertiesController()
+	api.propertiesController = properties2.InitPropertiesController()
 	api.saveManager = tabletop_save.NewSaveManager(api.propertiesController.GetApplicationProperties())
 	dir := api.propertiesController.GetApplicationProperties().PackDataDir
 	packData, err := resource_map.NewPackData(filepath.Join(dir))
@@ -37,7 +37,7 @@ func NewCacheManagerApi() *CacheManagerApi {
 	return api
 }
 
-func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
+func (api *CacheManagerApi) GetProperties() properties2.ApplicationPropertiesView {
 	applicationProperties := api.propertiesController.GetApplicationProperties()
 
 	return applicationProperties.ToView()
