@@ -65,33 +65,40 @@ func (bb *Bundle) isAggregatable() bool {
 }
 
 // returns a Bundle if it's a partial result
-func AggregateBundleRecur(unmarshalledJsonNode any, jsonPointer string, result map[string]Bundle) *Bundle {
+func AggregateBundleRecur(unmarshalledJsonNode any, jsonPointer *JsonPointer, result map[string]Bundle) *Bundle {
 	partial := &Bundle{ResUrls: make(map[string]string)}
-
+	pointerString := jsonPointer.BuildPointer()
+	var pointerClone *JsonPointer
 	switch v := unmarshalledJsonNode.(type) {
 	case map[string]interface{}:
 		for key, val := range v {
-			partial.reconcile(AggregateBundleRecur(val, jsonPointer+"."+key, result))
+			pointerClone = jsonPointer.clone()
+			pointerClone.Append(key)
+			partial.reconcile(AggregateBundleRecur(val, pointerClone, result))
 		}
 	case []interface{}:
 		for i, val := range v {
-			partial.reconcile(AggregateBundleRecur(val, fmt.Sprintf("%s[%d]", jsonPointer, i), result))
+			pointerClone = jsonPointer.clone()
+			pointerClone.Append(fmt.Sprintf("%d", i))
+			partial.reconcile(AggregateBundleRecur(val, pointerClone, result))
 		}
 	case string:
+		// a raw value
 		for _, key := range metaKeys {
-			if strings.HasSuffix(jsonPointer, key) {
+			if strings.HasSuffix(pointerString, key) {
 				_ = partial.AddMetaKey(key, v)
 				break
 			}
 		}
 
-		if urls.MatchString(jsonPointer) && resourcePattern.MatchString(strings.ToLower(v)) && len(jsonPointer) > 0 {
-			partial.ResUrls[jsonPointer[1:]] = v
+		// todo: I think that verifying the key or value is redundant here: I would simply check the value
+		if urls.MatchString(pointerString) && resourcePattern.MatchString(strings.ToLower(v)) && len(pointerString) > 0 {
+			partial.ResUrls[pointerString] = v
 		}
 	}
 
-	if partial.isAggregatable() && len(jsonPointer) > 0 {
-		result[jsonPointer[1:]] = *partial
+	if partial.isAggregatable() && len(pointerString) > 0 {
+		result[pointerString] = *partial
 		return nil
 	} else {
 		// pass downstream

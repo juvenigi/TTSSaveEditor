@@ -39,14 +39,8 @@ func CreateDefaultPackData() (string, error) {
 	if err = os.Mkdir(resPackPath, 0755); err != nil && !os.IsExist(err) {
 		return "", errors.Join(errors.New("unable to create resource data dir"), err)
 	}
-	resourcePack := filepath.Join(resPackPath, PackDataYaml)
-	create, err := os.Create(resourcePack)
-	if err != nil {
-		panic(err)
-	}
-	err = create.Close()
 	if err != nil {
 		return "", err
 	}
-	return resourcePack, nil
+	return resPackPath, nil
 }

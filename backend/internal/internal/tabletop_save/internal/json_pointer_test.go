@@ -72,3 +72,14 @@ func TestJsonPatch(t *testing.T) {
 	}
 	t.Logf("\n%s", patched)
 }
+
+func TestJsonPointer_Clone(t *testing.T) {
+	var pointer JsonPointer
+	pointer.Append("foo")
+	t.Logf("\n%s", pointer.BuildPointer())
+
+	var clone = pointer.clone()
+	clone.Append("bar")
+	t.Logf("\n%s", clone.BuildPointer())
+
+}

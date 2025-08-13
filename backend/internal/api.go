@@ -27,7 +27,7 @@ func NewCacheManagerApi() *CacheManagerApi {
 
 	api.propertiesController = properties.InitPropertiesController()
 	dir := api.propertiesController.GetApplicationProperties().PackDataDir
-	packData, err := resource_map.InitPackDataFromFile(filepath.Join(dir))
+	packData, err := resource_map.InitPackDataFromFile(filepath.Join(dir, properties.PackDataYaml))
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +78,7 @@ func (api *CacheManagerApi) GetTabletopSaves() error {
 // todo: return a view of PackData instead
 func (api *CacheManagerApi) WriteToPackData(saveLocation string) error {
 	applicationProperties := api.propertiesController.GetApplicationProperties()
-	gameDir := applicationProperties.PackDataDir
+	gameDir := applicationProperties.GameDir
 	packDataDir := applicationProperties.PackDataDir
 
 	saveData, err := tabletop_save.GetTabletopSaveFile(saveLocation, packDataDir)

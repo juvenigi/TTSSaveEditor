@@ -6,24 +6,29 @@ type JsonPointer struct {
 	sb strings.Builder
 }
 
-func (p *JsonPointer) Grow(size int) {
-	p.sb.Grow(size)
+func (jp *JsonPointer) clone() *JsonPointer {
+	var out JsonPointer
+	s := jp.sb.String()
+	out.sb.Grow(len(s))
+	out.sb.WriteString(s)
+
+	return &out
 }
-func (p *JsonPointer) Reset() {
-	p.sb.Reset()
+
+func (jp *JsonPointer) Grow(size int) {
+	jp.sb.Grow(size)
+}
+func (jp *JsonPointer) Reset() {
+	jp.sb.Reset()
 }
 
 func (jp *JsonPointer) Append(part string) {
+	jp.sb.WriteString("/")
 	jp.sb.WriteString(normalize(part))
 }
 
 func (jp *JsonPointer) BuildPointer() string {
-	jsonString := jp.sb.String()
-	if len(jsonString) == 0 {
-		return ""
-	} else {
-		return "/" + jsonString
-	}
+	return jp.sb.String()
 }
 
 func normalize(str string) string {

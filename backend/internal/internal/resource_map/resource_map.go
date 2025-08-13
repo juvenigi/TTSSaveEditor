@@ -3,6 +3,7 @@ package resource_map
 import (
 	"bytes"
 	"context"
+	"crypto/sha3"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/httpfetcher"
@@ -20,14 +22,14 @@ import (
 )
 
 type yamlPackData struct {
-	Sha3Archive map[string]string `yaml:"sha-3-map"`
-	UrlArchive  map[string]string `yaml:"url-map"`
+	UrlArchive map[string]string `yaml:"url-map"`
 }
 
 type PackData struct {
-	packDataDir string
-	sha3Archive map[string]string
-	urlArchive  map[string]string
+	packDataDir     string
+	packDataYamlLoc string
+	sha3Archive     map[string]string
+	urlArchive      map[string]string
 }
 
 func CreateBlankPackDataYaml(packDataLocation string) error {
@@ -45,9 +47,11 @@ func CreateBlankPackDataYaml(packDataLocation string) error {
 }
 
 func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
+	var alreadyClosed bool
 	var result PackData
 	var yamlPd yamlPackData
 	result.packDataDir = filepath.Dir(resourceMapFile)
+	result.packDataYamlLoc = resourceMapFile
 	result.sha3Archive = make(map[string]string)
 	result.urlArchive = make(map[string]string)
 
@@ -55,37 +59,53 @@ func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
 	if err != nil {
 		return result, err
 	}
+	defer func(src *os.File, closed bool) {
+		if !closed {
+			_ = src.Close()
+		}
+	}(src, alreadyClosed)
 
 	// todo: could one use a better solution here? (invalid yaml gets skipped without the user knowing)
 	if err = yaml.NewDecoder(src).Decode(&yamlPd); err != nil {
 		return result, err
 	}
+	_ = src.Close()
+	alreadyClosed = true
+
 	if yamlPd.UrlArchive != nil {
 		result.urlArchive = yamlPd.UrlArchive
-	} else {
-		result.sha3Archive = make(map[string]string)
-	}
-	if yamlPd.Sha3Archive != nil {
-		result.sha3Archive = yamlPd.Sha3Archive
-	} else {
-		result.sha3Archive = make(map[string]string)
 	}
 
-	err = result.cleanup()
+	entries, err := os.ReadDir(result.packDataDir)
+	if err != nil {
+		return result, err
+	}
+
+	extensions := []string{".yaml", ".yml", ".json"}
+	for _, entry := range entries {
+		if entry.IsDir() || slices.Contains(extensions, filepath.Ext(entry.Name())) {
+			continue
+		}
+		_, sum := util.GetFileAndChecksum(filepath.Join(result.packDataDir, entry.Name()))
+		result.sha3Archive[entry.Name()] = hex.EncodeToString(sum)
+	}
+
+	if err = result.cleanup(); err != nil {
+		return result, err
+	}
 
 	return result, nil
 }
 
 func (rm *PackData) FlushToDisk() error {
-	file, err := os.Open(rm.packDataDir)
+	file, err := os.Create(filepath.Join(rm.packDataYamlLoc))
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
 	if err = yaml.NewEncoder(file).Encode(yamlPackData{
-		Sha3Archive: rm.sha3Archive,
-		UrlArchive:  rm.urlArchive,
+		UrlArchive: rm.urlArchive,
 	}); err != nil {
 		return err
 	}
@@ -183,21 +203,6 @@ func (rm *PackData) writeResource(filenames *RwFilenameSlice, destinationName st
 	}
 	filenames.mu.RUnlock()
 
-	written, failedAttempts, criticalErr := attemptToWriteExtLess(rm.packDataDir, destinationName, attempt, blob)
-	if criticalErr != nil {
-		res.Status = tabletop_save.Failed
-		return criticalErr
-	}
-	filenames.mu.Lock()
-	filenames.entries[written] = struct{}{}
-	for _, fAttempt := range failedAttempts {
-		filenames.entries[fAttempt] = struct{}{}
-	}
-	filenames.mu.Unlock()
-
-	res.ResourceUrl = "pack://" + written
-	res.Status = tabletop_save.Packed
-
 	return rm.flushAndUpdate(res, blob, filenames)
 }
 
@@ -215,6 +220,14 @@ func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte,
 	}
 	filenames.mu.Unlock()
 
+	new256 := sha3.New256()
+	if _, criticalErr = new256.Write(file); criticalErr != nil {
+		return criticalErr
+	}
+
+	rm.urlArchive[res.ResourceUrl] = written
+	rm.sha3Archive[hex.EncodeToString(new256.Sum(nil))] = written
+
 	res.ResourceUrl = "pack://" + written
 	res.Status = tabletop_save.Packed
 
@@ -224,7 +237,7 @@ func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte,
 func attemptToWriteExtLess(dir string, name string, count int, content []byte) (string, []string, error) {
 	tries := 0
 	var previousAttempts []string
-	attemptName := fmt.Sprintf("%s-%d", name, count)
+	attemptName := name
 	previousAttempts = append(previousAttempts, attemptName)
 	for {
 		file, err := os.OpenFile(filepath.Join(dir, attemptName), os.O_WRONLY|os.O_CREATE|os.O_EXCL, os.ModePerm)
@@ -252,7 +265,7 @@ func attemptToWriteExtLess(dir string, name string, count int, content []byte) (
 }
 
 func (rm *PackData) AddRemoteCachedFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
-	fpath, ok := scanner.ResourceCached[res.ResourceUrl]
+	fpath, ok := scanner.ResourceCached[tabletop_save.GetCacheFilename(res.ResourceUrl)]
 	if !ok {
 		return errors.New("cached file not found")
 	}
@@ -265,23 +278,22 @@ func (rm *PackData) AddRemoteCachedFile(hashMu *sync.Mutex, res *tabletop_save.G
 	hashMu.Lock()
 	packDatafile, ok := rm.sha3Archive[hex.EncodeToString(fileChecksum)]
 	hashMu.Unlock()
-
 	if ok {
 		res.ResourceUrl = "pack://" + packDatafile
 		res.Status = tabletop_save.Packed
 		return nil
+	} else {
+		destinationFilename := tabletop_save.GetCacheFilename(res.ResourceUrl)
+		return rm.writeResource(filenames, destinationFilename, file, res)
 	}
-
-	destinationFilename := tabletop_save.GetCacheFilename(res.ResourceUrl)
-	return rm.writeResource(filenames, destinationFilename, file, res)
 }
 
 func (rm *PackData) cleanup() error {
 	filenames := NewRwFilenameSlice(rm.packDataDir)
 
 	deletedOnce := false
-	deletedOnce = cleanupMap(rm.scanMap(rm.urlArchive, filenames), rm.urlArchive)
-	deletedOnce = cleanupMap(rm.scanMap(rm.sha3Archive, filenames), rm.sha3Archive)
+	urlScanMap := rm.scanMap(rm.urlArchive, filenames)
+	deletedOnce = cleanupMap(urlScanMap, &rm.urlArchive)
 
 	if deletedOnce {
 		return rm.FlushToDisk()
@@ -295,11 +307,16 @@ type presentKey struct {
 	key     string
 }
 
-func cleanupMap(mappedUrlExists map[string]presentKey, target map[string]string) bool {
+// todo: proper test for cleanup, validation, init
+func cleanupMap(mappedUrlExists map[string]presentKey, target *map[string]string) bool {
 	deletedOnce := false
+	if target == nil {
+		return false
+	}
+
 	for _, key := range mappedUrlExists {
-		if key.present {
-			delete(target, key.key)
+		if !key.present {
+			delete(*target, key.key)
 			deletedOnce = true
 		}
 	}
@@ -388,7 +405,8 @@ func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_sav
 		}()
 	}
 	wg.Wait()
-	return nil
+
+	return rm.FlushToDisk()
 }
 
 // note: this is not thread safe

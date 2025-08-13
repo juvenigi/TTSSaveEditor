@@ -49,6 +49,7 @@ func (s *TSSaveFile) PutPackUrls() ([]byte, error) {
 	}
 
 	finalPatch := s.getJsonPatchBytes()
+	log.Println("Patching ", string(finalPatch))
 	patch, err := jsonpatch.DecodePatch(finalPatch)
 	if err != nil {
 		return nil, err
@@ -77,9 +78,12 @@ func (s *TSSaveFile) getJsonPatchBytes() []byte {
 		sb.WriteString(",")
 	}
 	concatenated := []byte(sb.String())
-	finalPatch := append(concatenated[:len(concatenated)-1], []byte("]")...)
-
-	return finalPatch
+	if len(concatenated) == 1 {
+		return append(concatenated, []byte("]")...)
+	} else {
+		// remove trailing comma
+		return append(concatenated[:len(concatenated)-1], []byte("]")...)
+	}
 }
 
 func (s *TSSaveFile) ToView() SaveFileView {
@@ -183,7 +187,7 @@ func ParseResourcesBundles(blob []byte, packDir string) ([]ResourceBundle, error
 func GetResourcesFromUnmarshalledJson(data any, packDir string) []ResourceBundle {
 	bundleMap := make(map[string]internal.Bundle)
 
-	_ = internal.AggregateBundleRecur(data, "", bundleMap)
+	_ = internal.AggregateBundleRecur(data, new(internal.JsonPointer), bundleMap)
 
 	var results []ResourceBundle
 	for k, bundle := range bundleMap {

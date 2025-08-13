@@ -40,8 +40,7 @@ func (rv *GameCacheFinder) MutCacheStatus(res *GameResource) {
 		return
 	}
 
-	base := filepath.Base(res.ResourceUrl)
-	cacheFilename := GetCacheFilename(base)
+	cacheFilename := GetCacheFilename(res.ResourceUrl)
 	if _, ok := rv.ResourceCached[cacheFilename]; ok {
 		res.Status = RemoteCached
 	}
