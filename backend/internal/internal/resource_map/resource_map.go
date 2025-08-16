@@ -122,8 +122,11 @@ type RwFilenameSlice struct {
 	entries map[string]struct{}
 }
 
-func NewRwFilenameSlice(packDataDir string) *RwFilenameSlice {
-	fileEntries, _ := os.ReadDir(packDataDir)
+func NewRwFilenameSlice(packDataDir string) (*RwFilenameSlice, error) {
+	fileEntries, err := os.ReadDir(packDataDir)
+	if err != nil {
+		return nil, err
+	}
 	filenames := make(map[string]struct{})
 	for _, file := range fileEntries {
 		if file.IsDir() {
@@ -135,7 +138,7 @@ func NewRwFilenameSlice(packDataDir string) *RwFilenameSlice {
 	return &RwFilenameSlice{
 		mu:      new(sync.RWMutex),
 		entries: filenames,
-	}
+	}, nil
 }
 
 func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
@@ -289,7 +292,10 @@ func (rm *PackData) AddRemoteCachedFile(hashMu *sync.Mutex, res *tabletop_save.G
 }
 
 func (rm *PackData) cleanup() error {
-	filenames := NewRwFilenameSlice(rm.packDataDir)
+	filenames, err := NewRwFilenameSlice(rm.packDataDir)
+	if err != nil {
+		return err
+	}
 
 	deletedOnce := false
 	urlScanMap := rm.scanMap(rm.urlArchive, filenames)
@@ -347,7 +353,7 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 		return err
 	}
 
-	if err = rm.WriteSaveToData(data.GetSaveName(), modifiedJsonBlob); err != nil {
+	if err = rm.WriteSaveToPackData(data.GetSaveName(), modifiedJsonBlob); err != nil {
 		return err
 	}
 
@@ -361,7 +367,11 @@ func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_sav
 		return err
 	}
 
-	filenames := NewRwFilenameSlice(rm.packDataDir)
+	filenames, err := NewRwFilenameSlice(rm.packDataDir)
+	if err != nil {
+		return err
+	}
+
 	for _, resource := range resources {
 		cacheFinder.MutCacheStatus(resource)
 	}
@@ -410,7 +420,7 @@ func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_sav
 }
 
 // note: this is not thread safe
-func (rm *PackData) WriteSaveToData(originalName string, blob []byte) error {
+func (rm *PackData) WriteSaveToPackData(originalName string, blob []byte) error {
 	var candidateName = strings.TrimSuffix(originalName, ".json")
 	dirEntries, err := os.ReadDir(rm.packDataDir)
 	if err != nil {
@@ -440,4 +450,40 @@ func (rm *PackData) WriteSaveToData(originalName string, blob []byte) error {
 		}
 		counter++
 	}
+}
+
+const packLen = len("pack://")
+
+func (rm *PackData) LocalizePackedResources(resources []*tabletop_save.GameResource) error {
+	var packJsonLocs []string
+	entries, err := os.ReadDir(rm.packDataDir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".pack.json") {
+			packJsonLocs = append(packJsonLocs, entry.Name())
+		}
+	}
+
+	for idx := range resources {
+		var res = resources[idx]
+		if res.Status == tabletop_save.Packed && strings.HasPrefix(res.ResourceUrl, "pack://") {
+			filename := res.ResourceUrl[packLen:]
+			if slices.Contains(packJsonLocs, filename) {
+				res.ResourceUrl = "file:///" + filepath.Join(rm.packDataDir, filename)
+			} else {
+				return fmt.Errorf("could not find resource %s in PackData", res.ResourceUrl)
+			}
+		} else if res.Status == tabletop_save.Remote {
+			if packDataLoc, ok := rm.urlArchive[res.ResourceUrl]; ok {
+				res.Status = tabletop_save.Packed
+				res.ResourceUrl = "file:///" + filepath.Join(rm.packDataDir, packDataLoc)
+			} else {
+				continue
+			}
+		}
+	}
+
+	return nil
 }

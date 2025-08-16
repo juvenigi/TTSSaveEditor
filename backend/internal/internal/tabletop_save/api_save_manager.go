@@ -13,7 +13,7 @@ import (
 func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan util.Result[TSSaveFile]) {
 	resChan := make(chan util.Result[TSSaveFile])
 
-	filenames, err := walkDirForSaveNames(gameDir)
+	filenames, err := WalkDirForSaveNames(gameDir)
 	if err != nil {
 		close(resChan)
 		return err, resChan
@@ -60,17 +60,16 @@ func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 	}, nil
 }
 
-func walkDirForSaveNames(gameDir string) ([]string, error) {
+func WalkDirForSaveNames(gameDir string) ([]string, error) {
 	saveFileDir := filepath.Join(gameDir, "Saves")
 
 	var saves []string
-	err := filepath.Walk(saveFileDir+string(os.PathSeparator), func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(saveFileDir+string(os.PathSeparator), func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() && strings.HasSuffix(path, ".json") {
 			saves = append(saves, path)
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 

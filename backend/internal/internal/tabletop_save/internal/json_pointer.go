@@ -11,7 +11,6 @@ func (jp *JsonPointer) clone() *JsonPointer {
 	s := jp.sb.String()
 	out.sb.Grow(len(s))
 	out.sb.WriteString(s)
-
 	return &out
 }
 
@@ -35,4 +34,11 @@ func normalize(str string) string {
 	str = strings.Replace(str, "/", "~1", -1)
 
 	return strings.Replace(str, "~", "~0", -1)
+}
+
+// and this one works
+func (jp *JsonPointer) cloneFrom(src *JsonPointer) {
+	jp.sb.Reset()
+	jp.sb.Grow(src.sb.Len())
+	jp.sb.WriteString(src.sb.String())
 }

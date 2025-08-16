@@ -83,3 +83,14 @@ func TestJsonPointer_Clone(t *testing.T) {
 	t.Logf("\n%s", clone.BuildPointer())
 
 }
+
+func TestJsonPointer_CloneFrom(t *testing.T) {
+	var src JsonPointer
+	var target JsonPointer
+
+	target.cloneFrom(&src)
+	target.Append("bar")
+	src.Append("quox")
+	t.Logf("\n%s", target.BuildPointer())
+	t.Logf("\n%s", src.BuildPointer())
+}

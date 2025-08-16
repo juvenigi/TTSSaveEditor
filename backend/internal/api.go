@@ -2,7 +2,9 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
+	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/properties"
 	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
@@ -13,6 +15,7 @@ import (
 const NewFileEvent = "ttsc:newFile"
 
 type CacheManagerApi struct {
+	singletonLock        sync.Mutex
 	ctx                  context.Context
 	propertiesController properties.Controller
 	packData             resource_map.PackData
@@ -37,15 +40,15 @@ func NewCacheManagerApi() *CacheManagerApi {
 }
 
 func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
-	applicationProperties := api.propertiesController.GetApplicationProperties()
+	appProperties := api.propertiesController.GetApplicationProperties()
 
-	return applicationProperties.ToView()
+	return appProperties.ToView()
 }
 
 func (api *CacheManagerApi) GetTabletopSaves() error {
-	applicationProperties := api.propertiesController.GetApplicationProperties()
-	gameDir := applicationProperties.PackDataDir
-	packDataDir := applicationProperties.PackDataDir
+	appProperties := api.propertiesController.GetApplicationProperties()
+	gameDir := appProperties.PackDataDir
+	packDataDir := appProperties.PackDataDir
 
 	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(gameDir, packDataDir)
 	if err != nil {
@@ -74,21 +77,49 @@ func (api *CacheManagerApi) GetTabletopSaves() error {
 //  1. mutating pack data
 //  2. mutating save data
 //
+// todo: thread-safety
 // todo: verify that the following mutations are done correctly:
 // todo: return a view of PackData instead
 func (api *CacheManagerApi) WriteToPackData(saveLocation string) error {
-	applicationProperties := api.propertiesController.GetApplicationProperties()
-	gameDir := applicationProperties.GameDir
-	packDataDir := applicationProperties.PackDataDir
+	if ok := api.singletonLock.TryLock(); !ok {
+		return errors.New("api busy")
+	}
+	defer api.singletonLock.Unlock()
+
+	appProperties := api.propertiesController.GetApplicationProperties()
+	gameDir := appProperties.GameDir
+	packDataDir := appProperties.PackDataDir
 
 	saveData, err := tabletop_save.GetTabletopSaveFile(saveLocation, packDataDir)
 	if err != nil {
 		return err
 	}
-
 	if err = api.packData.ImportFromSave(api.ctx, &saveData, gameDir); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// todo: make this thread-safe
+// todo: customize save name
+func (api *CacheManagerApi) ConstructPackedSave(saveLocation string) error {
+	if ok := api.singletonLock.TryLock(); !ok {
+		return errors.New("api busy")
+	}
+	defer api.singletonLock.Unlock()
+
+	appProperties := api.propertiesController.GetApplicationProperties()
+
+	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, appProperties.PackDataDir)
+	if err != nil {
+		return err
+	}
+	allResources := saveFile.GetAllResources()
+
+	if err = api.packData.LocalizePackedResources(allResources); err != nil {
+		return err
+	}
+
+	return saveFile.WriteNewSaveToSavesDir(filepath.Join(appProperties.GameDir, "Saves"))
 }

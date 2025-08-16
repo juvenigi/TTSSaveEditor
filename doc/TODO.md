@@ -25,9 +25,13 @@
 - write down correct json pointer
 - make all tests run
 - eliminate all dead code at this point
-- 
 
 # TODOs
+
+- unclean impl.: currently using "Packed" as "Modified" - maybe I should name it appropriately or use a different
+  status?
+
+- jsonPointer copyFrom
 
 - cleanup console spam
 
@@ -73,12 +77,12 @@
     - [/] savefile templates
         - [X] listing present savefile templates
         - [x] creating savefile template `.pack.json`
-          - actually flush to disk
-        - [ ] transforming the save template into a valid savefile
+            - actually flush to disk
+        - [/] transforming the save template into a valid savefile
     - [ ] zip / unzip the pack
-- [ ] tabletop savefile utils
-    - [ ] patch by jsonpath
-    - [ ] modify save data infos
+- [x] tabletop savefile utils
+    - [x] json patch
+    - [x] (skipped, as it is not necessary) modify save data infos
 - [ ] The grand contextification (find places where it makes sense to cancel operations)
 - [ ] Wails API
     - channel-to-event publishing

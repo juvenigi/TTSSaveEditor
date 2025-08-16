@@ -1,12 +1,17 @@
 package tabletop_save
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
 
@@ -48,7 +53,7 @@ func (s *TSSaveFile) PutPackUrls() ([]byte, error) {
 		return nil, err
 	}
 
-	finalPatch := s.getJsonPatchBytes()
+	finalPatch := s.GetJsonPatchBytesForPacked()
 	log.Println("Patching ", string(finalPatch))
 	patch, err := jsonpatch.DecodePatch(finalPatch)
 	if err != nil {
@@ -63,7 +68,76 @@ func (s *TSSaveFile) PutPackUrls() ([]byte, error) {
 	return modified, nil
 }
 
-func (s *TSSaveFile) getJsonPatchBytes() []byte {
+var numberPattern = regexp.MustCompile("^(\\d+) -")
+
+type SaveFileInfoJson struct {
+	Name string
+}
+
+func getLargestSavefileNumber(gameDir string) (string, error) {
+	var infos []SaveFileInfoJson
+
+	blob, err := os.ReadFile(filepath.Join(gameDir, "SaveFileInfos.json"))
+	if err != nil {
+		return "", err
+	}
+
+	if err = json.Unmarshal(blob, &infos); err != nil {
+		return "", err
+	}
+
+	largest := 1
+	for _, info := range infos {
+		if str := numberPattern.FindString(info.Name); len(str) > 0 {
+			if candidate, err := strconv.Atoi(str); err == nil && candidate > largest {
+				largest = candidate
+			} else if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return fmt.Sprintf("TS_Save_%d.json", largest), nil
+}
+
+func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string) error {
+	patchset := s.GetJsonPatchBytesForPacked()
+	patch, err := jsonpatch.DecodePatch(patchset)
+	if err != nil {
+		return err
+	}
+
+	saveFile, err := getLargestSavefileNumber(gameDir)
+	if err != nil {
+		return err
+	}
+	srcBlob, err := os.ReadFile(s.savefileLocation)
+	if err != nil {
+		return err
+	}
+	dest, err := os.Create(filepath.Join(gameDir, "Saves", saveFile))
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	patched, err := patch.Apply(srcBlob)
+	if err != nil {
+		return err
+	}
+
+	reader := bytes.NewReader(patched)
+	if _, err := io.Copy(dest, reader); err != nil {
+		return err
+	}
+	if err := dest.Sync(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *TSSaveFile) GetJsonPatchBytesForPacked() []byte {
 	var patches []string
 	for _, res := range s.GetAllResources() {
 		if res.Status != Packed {
@@ -133,7 +207,7 @@ func normalize(str *string) string {
 }
 
 func deduceResourceStatus(url string, packDir string) ResourceStatus {
-	if strings.HasPrefix(url, packDir) {
+	if strings.HasPrefix(url, packDir) || strings.HasPrefix(url, "pack://") {
 		return Packed
 	} else if strings.HasPrefix(url, steamApiUrlPrefix) {
 		return Steam
