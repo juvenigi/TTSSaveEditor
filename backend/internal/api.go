@@ -81,7 +81,7 @@ func (api *CacheManagerApi) GetTabletopSaves() error {
 // todo: thread-safety
 // todo: verify that the following mutations are done correctly:
 // todo: return a view of PackData instead
-func (api *CacheManagerApi) WriteToPackData(saveLocation string) error {
+func (api *CacheManagerApi) WriteToPackData(saveLocation string, writeSaveJson bool) error {
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -97,6 +97,17 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string) error {
 	}
 	if err = api.packData.ImportFromSave(api.ctx, &saveData, gameDir); err != nil {
 		return err
+	}
+
+	if writeSaveJson {
+		modifiedJsonBlob, err := saveData.PutPackUrls()
+		if err != nil {
+			return err
+		}
+
+		if err = api.packData.WriteSaveToPackData(saveData.GetSaveName(), modifiedJsonBlob); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -344,23 +344,6 @@ func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *RwFilenam
 func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
 	var err error
 
-	if err = rm.AddResourcesFromSave(ctx, data, gameDir); err != nil {
-		return err
-	}
-
-	modifiedJsonBlob, err := data.PutPackUrls()
-	if err != nil {
-		return err
-	}
-
-	if err = rm.WriteSaveToPackData(data.GetSaveName(), modifiedJsonBlob); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (rm *PackData) AddResourcesFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
 	resources := data.GetAllResources()
 	cacheFinder, err := tabletop_save.InitGameCacheFinder(gameDir)
 	if err != nil {
