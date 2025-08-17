@@ -12,7 +12,7 @@ func TestCacheManagerApi_WriteToPackData(t *testing.T) {
 	api.Startup(t.Context())
 
 	gameDir := api.propertiesController.GetApplicationProperties().GameDir
-	if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_70.json"), "Hmm we have a bug"); err != nil {
+	if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_65.json"), "Hmm we have a bug"); err != nil {
 		t.Fatal(err)
 	}
 }

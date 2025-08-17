@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const PackDataYaml = internal.PackDataYaml
+const PackDataYaml = resource_map.PackDataYaml
 
 type ApplicationProperties struct {
 	GameDir     string `yaml:"game-dir"`
@@ -67,11 +67,11 @@ func (p *ApplicationProperties) validate() error {
 	}
 
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.Compare(entry.Name(), internal.PackDataYaml) == 0 {
+		if !entry.IsDir() && strings.Compare(entry.Name(), PackDataYaml) == 0 {
 			return nil
 		}
 	}
-	packDataYamlLoc := filepath.Join(p.PackDataDir, internal.PackDataYaml)
+	packDataYamlLoc := filepath.Join(p.PackDataDir, PackDataYaml)
 	if err = resource_map.CreateBlankPackDataYaml(packDataYamlLoc); err != nil {
 		return err
 	}

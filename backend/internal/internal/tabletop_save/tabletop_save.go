@@ -388,7 +388,7 @@ func getCachedResourceLoc(gameDir string, resourceUrl string) string {
 	var cachedEntry = ""
 
 	found := errors.New("found") // a slightly hacky approach to short-circuit fs walk after the file is found
-	err := filepath.WalkDir(gameDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(gameDir+string(filepath.Separator), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

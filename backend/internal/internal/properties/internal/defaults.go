@@ -9,7 +9,6 @@ import (
 
 const (
 	packDataFolder = "PackData"
-	PackDataYaml   = "resource-map.yaml"
 
 	ConfigFileYaml = "properties.yaml"
 )

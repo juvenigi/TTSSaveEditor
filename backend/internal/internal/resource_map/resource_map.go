@@ -23,6 +23,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const PackDataYaml = "resource-map.yaml"
+
 type yamlPackData struct {
 	UrlArchive map[string]string `yaml:"url-map"`
 }
@@ -497,7 +499,7 @@ func (rm *PackData) MergeWith(otherDir string, makeBackup bool) error {
 		}
 	}
 
-	foreignPd, err := InitPackDataFromFile(filepath.Join(otherDir, "resource-map.yaml"))
+	foreignPd, err := InitPackDataFromFile(filepath.Join(otherDir, PackDataYaml))
 	if err != nil {
 		return err
 	}

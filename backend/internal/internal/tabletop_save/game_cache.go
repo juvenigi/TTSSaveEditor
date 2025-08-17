@@ -15,7 +15,7 @@ func InitGameCacheFinder(gameDir string) (GameCacheFinder, error) {
 	var result GameCacheFinder
 	cachedEntries := make(map[string]string)
 
-	err := filepath.WalkDir(gameDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(gameDir+string(filepath.Separator), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
