@@ -26,6 +26,7 @@ type GameResource struct {
 // it is not initialized from json save data for an obvious reason that it does not tell you if your resource is cached
 // same goes for `Packed` as it required knowledge of PackData content
 // `Steam` can become RemoteCached if the cached version of the resource exists on the disk
+// PackedLink : a local reference to a Packed file
 type ResourceStatus int
 
 const (
@@ -35,6 +36,7 @@ const (
 	RemoteCached
 	Steam
 	Packed
+	PackedLink
 )
 
 var protocolPrefix = regexp.MustCompile(`^[^:]+:///?`)

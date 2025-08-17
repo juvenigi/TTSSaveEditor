@@ -186,7 +186,7 @@ func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node, savename string) 
 		return nil, err
 	}
 
-	patchSet, err := jsonpatch.DecodePatch(s.GetJsonPatchBytesForPacked())
+	patchSet, err := jsonpatch.DecodePatch(s.GetJsonPatchBytesForPacked(false))
 	if err != nil {
 		return nil, err
 	}
@@ -206,40 +206,36 @@ func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node, savename string) 
 	return modified, nil
 }
 
-var numberPattern = regexp.MustCompile("^(\\d+) -")
-
 type SaveFileInfoJson struct {
 	Name string
 }
 
+var tsSavePattern = regexp.MustCompile("^TS_Save_(\\d+)")
+
 func getLargestSaveFileName(gameDir string) (string, error) {
-	var infos []SaveFileInfoJson
-
-	blob, err := os.ReadFile(filepath.Join(gameDir, "Saves", "SaveFileInfos.json"))
-	if err != nil {
-		return "", err
-	}
-
-	if err = json.Unmarshal(blob, &infos); err != nil {
-		return "", err
-	}
-
-	largest := 1
-	for _, info := range infos {
-		if str := numberPattern.FindStringSubmatch(info.Name); len(str) > 0 && len(str[1]) > 0 {
-			if candidate, err := strconv.Atoi(str[1]); err == nil && candidate > largest {
-				largest = candidate
-			} else if err != nil {
-				return "", err
+	largest := 0
+	err := filepath.WalkDir(filepath.Join(gameDir, "Saves")+string(filepath.Separator), func(path string, d fs.DirEntry, err error) error {
+		if strings.HasSuffix(d.Name(), ".json") && !d.IsDir() {
+			matches := tsSavePattern.FindStringSubmatch(d.Name())
+			if len(matches) > 0 {
+				if candidate, err := strconv.Atoi(matches[1]); err == nil && largest < candidate {
+					largest = candidate
+				} else {
+					return err
+				}
 			}
 		}
+		return err
+	})
+	if err != nil {
+		return "", err
 	}
 
 	return fmt.Sprintf("TS_Save_%d.json", largest+1), nil
 }
 
 func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string, saveName string) error {
-	patchset := s.GetJsonPatchBytesForPacked()
+	patchset := s.GetJsonPatchBytesForPacked(true)
 	patch, err := jsonpatch.DecodePatch(patchset)
 	if err != nil {
 		return err
@@ -282,12 +278,18 @@ func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string, saveName string) err
 	return nil
 }
 
-func (s *TSSaveFile) GetJsonPatchBytesForPacked() []byte {
+func (s *TSSaveFile) GetJsonPatchBytesForPacked(absPackLinks bool) []byte {
 	revisionBytes := s.revision.Serialize()
 
 	var patches []string
 	allResources := s.GetAllResources()
 	for _, res := range allResources {
+		// !absPackLinks => must relativize PackedLinks
+		if !absPackLinks && res.Status == PackedLink {
+			res.ResourceUrl = "pack://" + filepath.Base(res.ResourceUrl)
+			res.Status = Packed
+		}
+
 		if res.Status != Packed {
 			continue
 		}
@@ -361,15 +363,21 @@ func normalize(str *string) string {
 	return *str
 }
 
+const fileLen = len("file:///")
+
 func deduceResourceStatus(url string, packDir string) ResourceStatus {
-	if strings.HasPrefix(url, packDir) || strings.HasPrefix(url, "pack://") {
+	if strings.HasPrefix(url, "file:///") {
+		if strings.HasPrefix(url[fileLen:], packDir) {
+			return PackedLink
+		} else {
+			return Local
+		}
+	} else if strings.HasPrefix(url, "pack://") {
 		return Packed
 	} else if strings.HasPrefix(url, steamApiUrlPrefix) {
 		return Steam
 	} else if strings.HasPrefix(url, "http") {
 		return Remote
-	} else if strings.HasPrefix(url, "file:///") {
-		return Local
 	}
 
 	return Failed
