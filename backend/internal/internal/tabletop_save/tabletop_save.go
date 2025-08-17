@@ -201,7 +201,6 @@ func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node, savename string) 
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("%s\n", modified)
 
 	return modified, nil
 }
@@ -327,6 +326,8 @@ func (s *TSSaveFile) ToView() SaveFileView {
 				localResources++
 			case Remote:
 				uncachedRes++
+			case PackedLink:
+				packedResources++
 			case Packed:
 				packedResources++
 			case Steam:

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"log"
 	"maps"
 	"os"
 	"path/filepath"
@@ -40,6 +42,9 @@ func CreateBlankPackDataYaml(packDataLocation string) error {
 	var yamlData yamlPackData
 	file, err := os.OpenFile(packDataLocation, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
 	if err != nil {
+		if errors.Is(err, fs.ErrExist) {
+			return nil
+		}
 		return err
 	}
 	defer file.Close()
@@ -380,7 +385,8 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 			// no-op
 		}
 		if errSw != nil {
-			return errSw
+			log.Println(errSw)
+			errSw = nil
 		}
 	}
 

@@ -12,7 +12,6 @@ import (
 // GetTabletopSaveFilesAsync todo: consider breaking packData-save-properties loop some other way, or put packData and saveProperties into the same package
 func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan util.Result[TSSaveFile]) {
 	resChan := make(chan util.Result[TSSaveFile])
-
 	filenames, err := WalkDirForSaveNames(gameDir)
 	if err != nil {
 		close(resChan)
@@ -24,6 +23,7 @@ func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan 
 
 		var wg = new(sync.WaitGroup)
 		for _, fileName := range filenames {
+
 			wg.Add(1)
 			go func(fileN string) {
 				defer wg.Done()
@@ -45,8 +45,12 @@ func WalkDirForSaveNames(gameDir string) ([]string, error) {
 	saveFileDir := filepath.Join(gameDir, "Saves")
 
 	var saves []string
-	if err := filepath.Walk(saveFileDir+string(os.PathSeparator), func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() && strings.HasSuffix(path, ".json") {
+	root := saveFileDir + string(os.PathSeparator)
+	// the death happens here, but why
+	if err := filepath.WalkDir(root, func(path string, info os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		} else if !info.IsDir() && strings.HasSuffix(info.Name(), ".json") {
 			saves = append(saves, path)
 		}
 		return nil
@@ -54,10 +58,12 @@ func WalkDirForSaveNames(gameDir string) ([]string, error) {
 		return nil, err
 	}
 
-	if metadataIdx := slices.IndexFunc(saves, findSaveData); metadataIdx != -1 {
-		saves = append(saves[:metadataIdx], saves[metadataIdx+1:]...)
-	}
+	if len(saves) > 0 {
+		if metadataIdx := slices.IndexFunc(saves, findSaveData); metadataIdx != -1 {
+			saves = append(saves[:metadataIdx], saves[metadataIdx+1:]...)
+		}
 
+	}
 	return saves, nil
 }
 

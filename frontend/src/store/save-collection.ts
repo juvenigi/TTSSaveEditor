@@ -5,6 +5,9 @@ import {getOsPathSeparator} from "@/events/event-registrar.ts";
 
 export const GameSaveFileSchema = z.object({
   filename: z.string().nonempty("Filename cannot be empty"),
+  savename: z.string(),
+  pack_id: z.string(),
+  pack_revision: z.int().min(0),
   directory: z.string().nonempty("Directory cannot be empty"),
   objectCount: z.number().min(0),
   uncachedResources: z.number().min(0),

@@ -57,19 +57,15 @@ func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView
 }
 
 func (api *CacheManagerApi) GetTabletopSaves() error {
-	appProperties := api.propertiesController.GetApplicationProperties()
-	gameDir := appProperties.PackDataDir
-	packDataDir := appProperties.PackDataDir
-
-	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(gameDir, packDataDir)
+	pp := api.propertiesController.GetApplicationProperties()
+	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(pp.GameDir, pp.PackDataDir)
 	if err != nil {
 		return err
 	}
-
 	for {
 		select {
-		case saveRes, ok := <-resChan:
-			if !ok {
+		case saveRes, open := <-resChan:
+			if !open {
 				return nil
 			}
 			if saveRes.Err != nil {
