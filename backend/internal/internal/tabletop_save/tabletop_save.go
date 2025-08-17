@@ -122,53 +122,36 @@ type SaveFileView struct {
 	PackedResources       int    `json:"packedResources"`
 }
 
+type TagsAndSaveNamePartialJson struct {
+	Tags     []string
+	SaveName string
+}
+
 // GetTabletopSaveFile note: `seed` param is nillable
 func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 	var dummy TSSaveFile
 
-	file, err := os.ReadFile(loc)
+	blobBytes, err := os.ReadFile(loc)
 	if err != nil {
 		return dummy, err
 	}
 
 	var data any
-	if err := json.Unmarshal(file, &data); err != nil {
+	if err := json.Unmarshal(blobBytes, &data); err != nil {
+		return dummy, err
+	}
+
+	var tagsAndSave TagsAndSaveNamePartialJson
+	err = json.Unmarshal(blobBytes, &tagsAndSave)
+	if err != nil {
 		return dummy, err
 	}
 
 	var revision SaveRevision
-	var savename string
-	switch data.(type) {
-	case map[string]interface{}:
-		if tags, ok := data.(map[string]any)["Tags"]; ok {
-			switch tag := tags.(type) {
-			case []any:
-				stringsSlice := make([]string, 0, len(tag)+1)
-				nonString := false
-				for _, tagItem := range tag {
-					if it, ok := tagItem.(string); ok {
-						stringsSlice = append(stringsSlice, it)
-					} else {
-						nonString = true
-					}
-				}
-				if nonString {
-					return dummy, errors.New("invalid tags")
-				}
-				if err := revision.Parse(stringsSlice); err != nil {
-					return dummy, err
-				}
-			default:
-			}
+	if tagsAndSave.Tags != nil {
+		if err := revision.Parse(tagsAndSave.Tags); err != nil {
+			return dummy, err
 		}
-		if rawSavename, ok := data.(map[string]interface{})["SaveName"]; ok {
-			switch rawSavename := rawSavename.(type) {
-			case string:
-				savename = rawSavename
-			}
-		}
-	default:
-		return dummy, fmt.Errorf("save file is not a JSON object")
 	}
 
 	bundles, err := ParseResourcesBundles(data, packDataDir)
@@ -178,7 +161,7 @@ func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 
 	return TSSaveFile{
 		savefileLocation: loc,
-		savename:         savename,
+		savename:         tagsAndSave.SaveName,
 		revision:         revision,
 		resourceBundle:   bundles,
 	}, nil
