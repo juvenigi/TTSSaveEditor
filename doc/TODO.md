@@ -47,6 +47,9 @@
     - use `properties/internal` for _true private_ methods.
 - cleanup directory paths that come from tts, because they are a mess
 
+# Feature backlog
+- [ ] save json reconciliation ()
+
 # Planned features
 
 - [X] Consider whether there is any benefit in having two separate dirs for save and cache data
@@ -68,6 +71,8 @@
         - I learned that TTS is okay with files not having extensions, which is why I will write extensionless files in
           PackData
     - [/] Populating PackData
+        - [ ] Rename save name on pack data entry/exist
+        - [ ] TS_Save pack json versioning
         - [ ] check all concurrency issues
             - [ ] make pack data map read access thread-safe (since you may be writing to it concurrently)
                 - for the most part, make sure no parallel writes to pack data will occur
@@ -78,8 +83,8 @@
         - [X] listing present savefile templates
         - [x] creating savefile template `.pack.json`
             - actually flush to disk
-        - [/] transforming the save template into a valid savefile
-    - [ ] zip / unzip the pack
+        - [x] transforming the save template into a valid savefile
+    - [x] (skip) zip / unzip the pack
 - [x] tabletop savefile utils
     - [x] json patch
     - [x] (skipped, as it is not necessary) modify save data infos

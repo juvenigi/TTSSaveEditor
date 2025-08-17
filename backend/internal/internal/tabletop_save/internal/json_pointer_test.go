@@ -88,6 +88,7 @@ func TestJsonPointer_CloneFrom(t *testing.T) {
 	var src JsonPointer
 	var target JsonPointer
 
+	src.Append("foo")
 	target.cloneFrom(&src)
 	target.Append("bar")
 	src.Append("quox")

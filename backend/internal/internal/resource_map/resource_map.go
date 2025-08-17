@@ -377,7 +377,8 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 
 		seen[resourceRef.ResourceUrl] = struct{}{}
 		wg.Add(1)
-		go func() {
+		// todo: fix concurrent writes to packData first
+		func() {
 			defer wg.Done()
 			switch resourceRef.Status {
 			case tabletop_save.Remote, tabletop_save.RemoteCached:
@@ -404,7 +405,9 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 
 // note: this is not thread safe
 func (rm *PackData) WriteSaveToPackData(originalName string, blob []byte) error {
-	var candidateName = strings.TrimSuffix(originalName, ".json")
+	trimmedName := strings.TrimSuffix(originalName, ".json")
+	candidateName := trimmedName
+
 	dirEntries, err := os.ReadDir(rm.packDataDir)
 	if err != nil {
 		return err
@@ -424,7 +427,7 @@ func (rm *PackData) WriteSaveToPackData(originalName string, blob []byte) error 
 
 	counter := 0
 	for {
-		candidateName = fmt.Sprintf("%s-%d", candidateName, counter)
+		candidateName = fmt.Sprintf("%s-%d", trimmedName, counter)
 		if _, ok := nameSet[candidateName+".pack.json"]; !ok {
 			if err = os.WriteFile(filepath.Join(rm.packDataDir, candidateName+".pack.json"), blob, 0644); err != nil {
 				return err

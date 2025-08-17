@@ -3,9 +3,10 @@ module tts-cache-manager-cli
 go 1.24
 
 require (
+	github.com/bwmarrin/snowflake v0.3.0
 	github.com/evanphx/json-patch v0.5.2
 	github.com/ncruces/zenity v0.10.14
-	github.com/wailsapp/wails/v2 v2.10.1
+	github.com/wailsapp/wails/v2 v2.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -34,7 +35,7 @@ require (
 	github.com/tkrajina/go-reflector v0.5.8 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/wailsapp/go-webview2 v1.0.21 // indirect
+	github.com/wailsapp/go-webview2 v1.0.22 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/image v0.30.0 // indirect

@@ -41,25 +41,6 @@ func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan 
 	return nil, resChan
 }
 
-func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
-	var dummy TSSaveFile
-
-	file, err := os.ReadFile(loc)
-	if err != nil {
-		return dummy, err
-	}
-
-	bundles, err := ParseResourcesBundles(file, packDataDir)
-	if err != nil {
-		return dummy, err
-	}
-
-	return TSSaveFile{
-		savefileLocation: loc,
-		resourceBundle:   bundles,
-	}, nil
-}
-
 func WalkDirForSaveNames(gameDir string) ([]string, error) {
 	saveFileDir := filepath.Join(gameDir, "Saves")
 

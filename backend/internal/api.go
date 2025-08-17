@@ -10,6 +10,7 @@ import (
 	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
 
+	"github.com/bwmarrin/snowflake"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -17,6 +18,7 @@ const NewFileEvent = "ttsc:newFile"
 
 type CacheManagerApi struct {
 	singletonLock        sync.Mutex
+	seed                 *snowflake.Node
 	ctx                  context.Context
 	propertiesController properties.Controller
 	packData             resource_map.PackData
@@ -36,6 +38,12 @@ func NewCacheManagerApi() *CacheManagerApi {
 		panic(err)
 	}
 	api.packData = packData
+
+	seed, err := snowflake.NewNode(1)
+	if err != nil {
+		panic(err)
+	}
+	api.seed = seed
 
 	return api
 }
@@ -100,7 +108,7 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, writeSaveJson b
 	}
 
 	if writeSaveJson {
-		modifiedJsonBlob, err := saveData.PutPackUrls()
+		modifiedJsonBlob, err := saveData.GetPortableJsonBlob(api.seed)
 		if err != nil {
 			return err
 		}

@@ -30,7 +30,7 @@ func TestTSSaveFile_SaveAsPackTemplate(t *testing.T) {
 			},
 		},
 	}
-	if _, err := save.PutPackUrls(); err != nil {
+	if _, err := save.GetPortableJsonBlob(nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -126,4 +126,19 @@ func visit(path string, d fs.DirEntry, err error, t *testing.T) error {
 	}
 	t.Log(" ", path, d.IsDir())
 	return nil
+}
+
+func TestRegexPattern(t *testing.T) {
+	var foo = "$packrev://"
+	t.Log(len(saveRevPattern.FindStringSubmatch(foo)))
+}
+
+func TestUnkownType(t *testing.T) {
+	var foo any = 1
+
+	var bar string
+
+	bar = foo.(string)
+
+	t.Log(bar)
 }
