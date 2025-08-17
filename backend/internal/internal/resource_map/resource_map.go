@@ -461,7 +461,8 @@ func (rm *PackData) LocalizePackedResources(resources []*tabletop_save.GameResou
 		return err
 	}
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".pack.json") {
+		// oh no, terrible inefficiency!
+		if !entry.IsDir() && !strings.HasSuffix(entry.Name(), ".pack.json") && !strings.HasSuffix(entry.Name(), ".yaml") {
 			packJsonLocs = append(packJsonLocs, entry.Name())
 		}
 	}

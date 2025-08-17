@@ -77,7 +77,7 @@ type SaveFileInfoJson struct {
 func getLargestSavefileNumber(gameDir string) (string, error) {
 	var infos []SaveFileInfoJson
 
-	blob, err := os.ReadFile(filepath.Join(gameDir, "SaveFileInfos.json"))
+	blob, err := os.ReadFile(filepath.Join(gameDir, "Saves", "SaveFileInfos.json"))
 	if err != nil {
 		return "", err
 	}
@@ -88,8 +88,8 @@ func getLargestSavefileNumber(gameDir string) (string, error) {
 
 	largest := 1
 	for _, info := range infos {
-		if str := numberPattern.FindString(info.Name); len(str) > 0 {
-			if candidate, err := strconv.Atoi(str); err == nil && candidate > largest {
+		if str := numberPattern.FindStringSubmatch(info.Name); len(str) > 0 && len(str[1]) > 0 {
+			if candidate, err := strconv.Atoi(str[1]); err == nil && candidate > largest {
 				largest = candidate
 			} else if err != nil {
 				return "", err
@@ -97,7 +97,7 @@ func getLargestSavefileNumber(gameDir string) (string, error) {
 		}
 	}
 
-	return fmt.Sprintf("TS_Save_%d.json", largest), nil
+	return fmt.Sprintf("TS_Save_%d.json", largest+1), nil
 }
 
 func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string) error {
@@ -139,7 +139,8 @@ func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string) error {
 
 func (s *TSSaveFile) GetJsonPatchBytesForPacked() []byte {
 	var patches []string
-	for _, res := range s.GetAllResources() {
+	allResources := s.GetAllResources()
+	for _, res := range allResources {
 		if res.Status != Packed {
 			continue
 		}

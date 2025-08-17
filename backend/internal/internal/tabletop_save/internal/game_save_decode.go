@@ -9,7 +9,7 @@ import (
 
 var urls = regexp.MustCompile("URL$")
 
-var resourcePattern = regexp.MustCompile(`^(https?)|(file)://.*`)
+var resourcePattern = regexp.MustCompile(`^(https?)|(file)|(pack).*`)
 
 var metaKeys = []string{"Name", "Nickname", "GUID"}
 

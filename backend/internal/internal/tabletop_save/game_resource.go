@@ -2,6 +2,8 @@ package tabletop_save
 
 import (
 	"fmt"
+	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -35,8 +37,29 @@ const (
 	Packed
 )
 
+var protocolPrefix = regexp.MustCompile(`^[^:]+:///?`)
+
 func (gr *GameResource) createJsonPatch() string {
 	patchPath := strings.ReplaceAll(gr.JsonPointer, ".", "/")
+	url := gr.ResourceUrl
 
-	return fmt.Sprintf(`{"op":"replace","path":"%s", "value":"%s"}`, patchPath, gr.ResourceUrl)
+	separatorString := string(filepath.Separator)
+	var escapedUrl string
+	if strings.Compare(separatorString, "\\") == 0 {
+		idx := 0
+		if match := protocolPrefix.FindStringIndex(url); match != nil {
+			idx = match[1]
+		}
+
+		protocol := url[:idx]
+		url = url[idx:]
+
+		escapedSeparator := "\\" + separatorString
+
+		escapedUrl = protocol + strings.ReplaceAll(url, separatorString, escapedSeparator)
+	} else {
+		escapedUrl = url
+	}
+
+	return fmt.Sprintf(`{"op":"replace","path":"%s", "value":"%s"}`, patchPath, escapedUrl)
 }

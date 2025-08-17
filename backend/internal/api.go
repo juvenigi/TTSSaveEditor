@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"log"
 	"path/filepath"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/properties"
@@ -117,9 +118,18 @@ func (api *CacheManagerApi) ConstructPackedSave(saveLocation string) error {
 	}
 	allResources := saveFile.GetAllResources()
 
+	// tmp debug
+	packedCnt := 0
+	for _, resource := range allResources {
+		if resource.Status == tabletop_save.Packed {
+			packedCnt++
+		}
+	}
+	log.Println(packedCnt)
+
 	if err = api.packData.LocalizePackedResources(allResources); err != nil {
 		return err
 	}
 
-	return saveFile.WriteNewSaveToSavesDir(filepath.Join(appProperties.GameDir, "Saves"))
+	return saveFile.WriteNewSaveToSavesDir(filepath.Join(appProperties.GameDir))
 }
