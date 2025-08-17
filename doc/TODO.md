@@ -80,6 +80,8 @@
 - [/] Populating PackData
     - [X] Rename save name on pack data entry/exit
     - [X] TS_Save pack json versioning
+    - [ ] PackData merge (combine pack data with another packdata)
+        - behavior: override, params: makeBackup
     - [ ] check all concurrency issues
     - [ ] do not be sloppy with pointers (make sure they are handled correctly)
 - [X] File Delete (backend)

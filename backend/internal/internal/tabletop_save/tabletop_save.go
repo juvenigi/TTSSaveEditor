@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
-	"tts-cache-manager-cli/util"
+	"tts-cache-manager-cli/util/base52"
 
 	"github.com/bwmarrin/snowflake"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -48,7 +48,7 @@ func (rev *SaveRevision) Parse(valueFromJson []string) error {
 		rev.root = submatches[1]
 		if len(submatches[2]) > 0 {
 			var err error
-			int64Decode, err := util.Decode(submatches[2])
+			int64Decode, err := base52.Decode(submatches[2])
 			if err != nil {
 				return err
 			}
@@ -82,7 +82,7 @@ func (rev *SaveRevision) String() (string, error) {
 	if rev.revision == 0 {
 		return fmt.Sprintf("__packrev%s", rev.root), nil
 	}
-	encode, err := util.Encode(int64(rev.revision))
+	encode, err := base52.Encode(int64(rev.revision))
 	if err != nil {
 		return "", err
 	}
@@ -92,7 +92,7 @@ func (rev *SaveRevision) String() (string, error) {
 func (rev *SaveRevision) IncrementOrGen(seed *snowflake.Node) {
 	if len(rev.root) == 0 {
 		rev.revision = 0
-		encode, err := util.Encode(seed.Generate().Int64())
+		encode, err := base52.Encode(seed.Generate().Int64())
 		if err != nil {
 			panic(err)
 		}

@@ -24,10 +24,23 @@ func TestCacheManagerApi_ConstructPackedSave(t *testing.T) {
 
 	_ = api.propertiesController.GetApplicationProperties().GameDir
 	packDir := api.propertiesController.GetApplicationProperties().PackDataDir
-	//if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_2.json")); err != nil {
-	//	t.Fatal(err)
-	//}
 	if err := api.ConstructPackedSave(filepath.Join(packDir, "TS_Save_438.pack.json"), "Custom Save Name Test"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCacheManagerApi_MergePackDataWithAnother(t *testing.T) {
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("executable dir:", filepath.Dir(executable))
+	api := NewCacheManagerApi()
+	api.Startup(t.Context())
+
+	otherLoc := filepath.Join(filepath.Dir(executable), "NeoData")
+
+	if err := api.MergePackDataWithAnother(otherLoc, true); err != nil {
 		t.Fatal(err)
 	}
 }

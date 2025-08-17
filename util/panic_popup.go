@@ -2,8 +2,9 @@ package util
 
 import (
 	"fmt"
-	"github.com/ncruces/zenity"
 	"runtime"
+
+	"github.com/ncruces/zenity"
 )
 
 func ShowWindowOnPanic() {
@@ -14,6 +15,7 @@ func ShowWindowOnPanic() {
 
 		msg := fmt.Sprintf("Application Error:\n%v\n\n%s", r, stackTrace)
 
+		// must block here, otherwise the user won't even see the window or see a window open and close
 		_ = zenity.Error(msg, zenity.Title("Unexpected Error"), zenity.ErrorIcon)
 
 		panic(r)

@@ -8,15 +8,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/httpfetcher"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
-	"tts-cache-manager-cli/util"
+	"tts-cache-manager-cli/backend/internal/internal/wrapped_io"
 
 	"gopkg.in/yaml.v3"
 )
@@ -86,7 +88,7 @@ func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
 		if entry.IsDir() || slices.Contains(extensions, filepath.Ext(entry.Name())) {
 			continue
 		}
-		_, sum := util.GetFileAndChecksum(filepath.Join(result.packDataDir, entry.Name()))
+		_, sum := wrapped_io.GetFileAndChecksum(filepath.Join(result.packDataDir, entry.Name()))
 		result.sha3Archive[entry.Name()] = hex.EncodeToString(sum)
 	}
 
@@ -143,7 +145,7 @@ func NewRwFilenameSlice(packDataDir string) (*RwFilenameSlice, error) {
 
 func (rm *PackData) AddLocalFile(res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
 	var location = strings.TrimPrefix(res.ResourceUrl, "file:///")
-	blob, sum := util.GetFileAndChecksum(location)
+	blob, sum := wrapped_io.GetFileAndChecksum(location)
 	if sum == nil {
 		return errors.New("file not found")
 	}
@@ -269,7 +271,7 @@ func (rm *PackData) AddRemoteCachedFile(res *tabletop_save.GameResource, filenam
 		return errors.New("cached file not found")
 	}
 
-	file, fileChecksum := util.GetFileAndChecksum(fpath)
+	file, fileChecksum := wrapped_io.GetFileAndChecksum(fpath)
 	if fileChecksum == nil {
 		return errors.New("cached file not found")
 	}
@@ -449,6 +451,113 @@ func (rm *PackData) LocalizePackedResources(resources []*tabletop_save.GameResou
 			} else {
 				continue
 			}
+		}
+	}
+
+	return nil
+}
+
+func (rm *PackData) MergeWith(otherDir string, makeBackup bool) error {
+	if makeBackup {
+		if err := rm.MakeBackup(); err != nil {
+			return err
+		}
+	}
+
+	entries, err := os.ReadDir(otherDir)
+	if err != nil {
+		return err
+	}
+
+	idx := slices.IndexFunc(entries, func(s os.DirEntry) bool {
+		return !s.IsDir() && strings.HasSuffix(s.Name(), ".yaml")
+	})
+	if idx == -1 {
+		return errors.New("could not find pack data index file")
+	}
+	entries = append(entries[:idx], entries[idx+1:]...)
+	for _, entry := range entries {
+		if entry.IsDir() || strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		} else if strings.HasSuffix(entry.Name(), ".pack.json") {
+			src := filepath.Join(otherDir, entry.Name())
+			if srcBlob, err := os.ReadFile(src); err != nil {
+				return err
+			} else {
+				if err := rm.WriteSaveToPackData(entry.Name(), srcBlob); err != nil {
+					return err
+				}
+			}
+		} else {
+			src := filepath.Join(otherDir, entry.Name())
+			dest := filepath.Join(rm.packDataDir, entry.Name())
+			if err := wrapped_io.CopyFile(src, dest); err != nil {
+				return err
+			}
+		}
+	}
+
+	foreignPd, err := InitPackDataFromFile(filepath.Join(otherDir, "resource-map.yaml"))
+	if err != nil {
+		return err
+	}
+
+	maps.Copy(rm.urlArchive, foreignPd.urlArchive)
+	maps.Copy(rm.sha3Archive, foreignPd.sha3Archive)
+
+	return rm.FlushToDisk()
+}
+
+var bakNumPattern = regexp.MustCompile(`\d+`)
+
+func (rm *PackData) MakeBackup() error {
+	parent, dir := filepath.Split(rm.packDataDir)
+	dirEntries, err := os.ReadDir(parent)
+	if err != nil {
+		return err
+	}
+	var packs []string
+	largest := -1
+	for _, entry := range dirEntries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), dir) {
+			packs = append(packs, entry.Name())
+			if digits := bakNumPattern.FindString(entry.Name()); len(digits) > 0 {
+				cursor, err := strconv.Atoi(digits)
+				if err != nil {
+					return err
+				}
+				if cursor > largest {
+					largest = cursor
+				}
+			}
+		}
+	}
+	var strippedDir string
+	idx := strings.Index(dir, ".")
+	if idx == -1 {
+		strippedDir = dir
+	} else {
+		strippedDir = dir[:idx]
+	}
+
+	backupDir := filepath.Join(parent, fmt.Sprintf("%s.%d", strippedDir, largest+1))
+	if err = os.Mkdir(backupDir, 0755); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(rm.packDataDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		src := filepath.Join(rm.packDataDir, entry.Name())
+		dest := filepath.Join(backupDir, entry.Name())
+		if err := wrapped_io.CopyFile(src, dest); err != nil {
+			return err
 		}
 	}
 

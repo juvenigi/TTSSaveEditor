@@ -5,10 +5,12 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/properties"
 	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
+	"tts-cache-manager-cli/backend/internal/internal/wrapped_io"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -138,4 +140,27 @@ func (api *CacheManagerApi) ConstructPackedSave(saveLocation string, saveName st
 
 func (api *CacheManagerApi) Delete(fileLocation string) error {
 	return os.Remove(fileLocation)
+}
+
+func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup bool) error {
+	if ok := api.singletonLock.TryLock(); !ok {
+		return errors.New("api busy")
+	}
+	defer api.singletonLock.Unlock()
+
+	var srcLoc string
+	if strings.HasSuffix(otherLoc, ".7z") {
+		srcLoc, err := os.MkdirTemp("", "unzipped")
+		if err != nil {
+			return err
+		}
+
+		if err = wrapped_io.ExtractArchive(otherLoc, srcLoc); err != nil {
+			return err
+		}
+	} else {
+		srcLoc = otherLoc
+	}
+
+	return api.packData.MergeWith(srcLoc, makeBackup)
 }

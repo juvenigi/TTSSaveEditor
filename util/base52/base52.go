@@ -1,4 +1,4 @@
-package util
+package base52
 
 import (
 	"errors"
