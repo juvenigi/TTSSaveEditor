@@ -141,16 +141,14 @@ func NewRwFilenameSlice(packDataDir string) (*RwFilenameSlice, error) {
 	}, nil
 }
 
-func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
+func (rm *PackData) AddLocalFile(res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
 	var location = strings.TrimPrefix(res.ResourceUrl, "file:///")
 	blob, sum := util.GetFileAndChecksum(location)
 	if sum == nil {
 		return errors.New("file not found")
 	}
 
-	hashMu.Lock()
 	packDataFile, exists := rm.sha3Archive[hex.EncodeToString(sum)]
-	hashMu.Unlock()
 	if exists {
 		res.ResourceUrl = "pack:///" + packDataFile
 		res.Status = tabletop_save.Packed
@@ -161,16 +159,14 @@ func (rm *PackData) AddLocalFile(hashMu *sync.Mutex, res *tabletop_save.GameReso
 	return rm.writeResource(filenames, destFilename, blob, res)
 }
 
-func (rm *PackData) AddRemoteFile(ctx context.Context, hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
+func (rm *PackData) AddRemoteFile(ctx context.Context, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
 	urlRes, err := httpfetcher.GetResourceAsync(ctx, res.ResourceUrl)
 	if err != nil {
 		res.Status = tabletop_save.Failed
 		return err
 	}
 
-	hashMu.Lock()
 	packFileName, ok := rm.sha3Archive[hex.EncodeToString(urlRes.Checksum)]
-	hashMu.Unlock()
 	if ok {
 		if file, err := os.ReadFile(filepath.Join(rm.packDataDir, packFileName)); err == nil {
 			res.Status = tabletop_save.Failed // todo: re-check pack data consistency if such error is detected
@@ -267,7 +263,7 @@ func attemptToWriteExtLess(dir string, name string, count int, content []byte) (
 	return attemptName, previousAttempts, nil
 }
 
-func (rm *PackData) AddRemoteCachedFile(hashMu *sync.Mutex, res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
+func (rm *PackData) AddRemoteCachedFile(res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
 	fpath, ok := scanner.ResourceCached[tabletop_save.GetCacheFilename(res.ResourceUrl)]
 	if !ok {
 		return errors.New("cached file not found")
@@ -278,9 +274,7 @@ func (rm *PackData) AddRemoteCachedFile(hashMu *sync.Mutex, res *tabletop_save.G
 		return errors.New("cached file not found")
 	}
 
-	hashMu.Lock()
 	packDatafile, ok := rm.sha3Archive[hex.EncodeToString(fileChecksum)]
-	hashMu.Unlock()
 	if ok {
 		res.ResourceUrl = "pack://" + packDatafile
 		res.Status = tabletop_save.Packed
@@ -342,8 +336,6 @@ func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *RwFilenam
 }
 
 func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
-	var err error
-
 	resources := data.GetAllResources()
 	cacheFinder, err := tabletop_save.InitGameCacheFinder(gameDir)
 	if err != nil {
@@ -358,15 +350,6 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 	for _, resource := range resources {
 		cacheFinder.MutCacheStatus(resource)
 	}
-
-	var errChan = make(chan error)
-	// todo: combine ctx with errChan being closed (although we kinda don't care about errors atm)
-	//  upd: my plan is to transmit errors as toasts to frontend
-	defer close(errChan)
-
-	var hashMu = new(sync.Mutex)
-	var wg sync.WaitGroup
-
 	// may contain filenames or urls
 	var seen = make(map[string]struct{})
 	for idx := range resources {
@@ -374,31 +357,28 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 		if _, already := seen[resourceRef.ResourceUrl]; already {
 			continue
 		}
-
 		seen[resourceRef.ResourceUrl] = struct{}{}
-		wg.Add(1)
-		// todo: fix concurrent writes to packData first
-		func() {
-			defer wg.Done()
-			switch resourceRef.Status {
-			case tabletop_save.Remote, tabletop_save.RemoteCached:
-				if packUrl, ok := rm.urlArchive[resourceRef.ResourceUrl]; ok {
-					resourceRef.ResourceUrl = "pack://" + packUrl
-					resourceRef.Status = tabletop_save.Packed
-					return
-				} else if resourceRef.Status == tabletop_save.Remote {
-					_ = rm.AddRemoteFile(ctx, hashMu, resourceRef, filenames)
-				} else {
-					_ = rm.AddRemoteCachedFile(hashMu, resourceRef, filenames, &cacheFinder)
-				}
-			case tabletop_save.Local:
-				_ = rm.AddLocalFile(hashMu, resourceRef, filenames)
-			default:
-				// no-op
+
+		var errSw error
+		switch resourceRef.Status {
+		case tabletop_save.Remote, tabletop_save.RemoteCached:
+			if packUrl, ok := rm.urlArchive[resourceRef.ResourceUrl]; ok {
+				resourceRef.ResourceUrl = "pack://" + packUrl
+				resourceRef.Status = tabletop_save.Packed
+			} else if resourceRef.Status == tabletop_save.Remote {
+				errSw = rm.AddRemoteFile(ctx, resourceRef, filenames)
+			} else {
+				errSw = rm.AddRemoteCachedFile(resourceRef, filenames, &cacheFinder)
 			}
-		}()
+		case tabletop_save.Local:
+			errSw = rm.AddLocalFile(resourceRef, filenames)
+		default:
+			// no-op
+		}
+		if errSw != nil {
+			return errSw
+		}
 	}
-	wg.Wait()
 
 	return rm.FlushToDisk()
 }

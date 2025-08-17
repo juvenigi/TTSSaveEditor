@@ -4,7 +4,7 @@
     - same goes for pack data
 - fill up pack data
 - savefile management
-    - view savefile entries (image preview, resources, amount of them cached)
+    - (might skip) view savefile entries (image preview, resources, amount of them cached)
     - create pack data
     - erase savefile
 
@@ -47,9 +47,6 @@
     - use `properties/internal` for _true private_ methods.
 - cleanup directory paths that come from tts, because they are a mess
 
-# Feature backlog
-- [ ] save json reconciliation ()
-
 # Planned features
 
 - [X] Consider whether there is any benefit in having two separate dirs for save and cache data
@@ -65,21 +62,13 @@
         - [X] ignore steam items (ask if user wishes to convert it to local data using cache)
             - obsolete because we handle things differently now (no more trying to retrieve http resources, only check
               the pack and tts cache)
-- [/] Initialize the Pack
+- [x] Initialize the Pack
     - [X] PackData init / core PackData functions
     - [x] gracefully handle url resources where the filename is not obvious
         - I learned that TTS is okay with files not having extensions, which is why I will write extensionless files in
           PackData
-    - [/] Populating PackData
-        - [ ] Rename save name on pack data entry/exist
-        - [ ] TS_Save pack json versioning
-        - [ ] check all concurrency issues
-            - [ ] make pack data map read access thread-safe (since you may be writing to it concurrently)
-                - for the most part, make sure no parallel writes to pack data will occur
-                    - (a RWLock in api layer will do)
-            - [ ] do not be sloppy with pointers (make sure they are handled correctly)
-- [/] PackData utils
-    - [/] savefile templates
+- [x] PackData utils
+    - [x] savefile templates
         - [X] listing present savefile templates
         - [x] creating savefile template `.pack.json`
             - actually flush to disk
@@ -88,6 +77,12 @@
 - [x] tabletop savefile utils
     - [x] json patch
     - [x] (skipped, as it is not necessary) modify save data infos
+- [/] Populating PackData
+    - [X] Rename save name on pack data entry/exit
+    - [X] TS_Save pack json versioning
+    - [ ] check all concurrency issues
+    - [ ] do not be sloppy with pointers (make sure they are handled correctly)
+- [X] File Delete (backend)
 - [ ] The grand contextification (find places where it makes sense to cancel operations)
 - [ ] Wails API
     - channel-to-event publishing

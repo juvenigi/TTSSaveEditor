@@ -12,7 +12,7 @@ func TestCacheManagerApi_WriteToPackData(t *testing.T) {
 	api.Startup(t.Context())
 
 	gameDir := api.propertiesController.GetApplicationProperties().GameDir
-	if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_438.json"), true); err != nil {
+	if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_438.json"), "Customize me"); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -27,7 +27,7 @@ func TestCacheManagerApi_ConstructPackedSave(t *testing.T) {
 	//if err := api.WriteToPackData(filepath.Join(gameDir, "Saves", "TS_Save_2.json")); err != nil {
 	//	t.Fatal(err)
 	//}
-	if err := api.ConstructPackedSave(filepath.Join(packDir, "TS_Save_438.pack.json")); err != nil {
+	if err := api.ConstructPackedSave(filepath.Join(packDir, "TS_Save_438.pack.json"), "Custom Save Name Test"); err != nil {
 		t.Fatal(err)
 	}
 }

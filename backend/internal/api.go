@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
-	"log"
+	"os"
 	"path/filepath"
 	"sync"
 	"tts-cache-manager-cli/backend/internal/internal/properties"
@@ -82,14 +82,7 @@ func (api *CacheManagerApi) GetTabletopSaves() error {
 	}
 }
 
-// WriteToPackData
-//  1. mutating pack data
-//  2. mutating save data
-//
-// todo: thread-safety
-// todo: verify that the following mutations are done correctly:
-// todo: return a view of PackData instead
-func (api *CacheManagerApi) WriteToPackData(saveLocation string, writeSaveJson bool) error {
+func (api *CacheManagerApi) WriteToPackData(saveLocation string, savename string) error {
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -107,8 +100,8 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, writeSaveJson b
 		return err
 	}
 
-	if writeSaveJson {
-		modifiedJsonBlob, err := saveData.GetPortableJsonBlob(api.seed)
+	if len(savename) > 0 {
+		modifiedJsonBlob, err := saveData.GetPortableJsonBlob(api.seed, savename)
 		if err != nil {
 			return err
 		}
@@ -121,9 +114,8 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, writeSaveJson b
 	return nil
 }
 
-// todo: make this thread-safe
-// todo: customize save name
-func (api *CacheManagerApi) ConstructPackedSave(saveLocation string) error {
+// ConstructPackedSave note : saveName != savefile name, it's what the game will show you in the save selection
+func (api *CacheManagerApi) ConstructPackedSave(saveLocation string, saveName string) error {
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -137,18 +129,13 @@ func (api *CacheManagerApi) ConstructPackedSave(saveLocation string) error {
 	}
 	allResources := saveFile.GetAllResources()
 
-	// tmp debug
-	packedCnt := 0
-	for _, resource := range allResources {
-		if resource.Status == tabletop_save.Packed {
-			packedCnt++
-		}
-	}
-	log.Println(packedCnt)
-
 	if err = api.packData.LocalizePackedResources(allResources); err != nil {
 		return err
 	}
 
-	return saveFile.WriteNewSaveToSavesDir(filepath.Join(appProperties.GameDir))
+	return saveFile.WriteNewSaveToSavesDir(filepath.Join(appProperties.GameDir), saveName)
+}
+
+func (api *CacheManagerApi) Delete(fileLocation string) error {
+	return os.Remove(fileLocation)
 }

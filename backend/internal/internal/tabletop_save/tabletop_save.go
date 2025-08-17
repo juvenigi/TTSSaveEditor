@@ -104,12 +104,14 @@ func (rev *SaveRevision) IncrementOrGen(seed *snowflake.Node) {
 
 type TSSaveFile struct {
 	savefileLocation string
+	savename         string
 	revision         SaveRevision
 	resourceBundle   []ResourceBundle
 }
 
 type SaveFileView struct {
 	Filename              string `json:"filename"`
+	Savename              string `json:"savename"`
 	Directory             string `json:"directory"`
 	PackId                string `json:"pack_id"`
 	PackRevision          int    `json:"pack_revision"`
@@ -135,7 +137,7 @@ func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 	}
 
 	var revision SaveRevision
-	//var revStr string
+	var savename string
 	switch data.(type) {
 	case map[string]interface{}:
 		if tags, ok := data.(map[string]any)["Tags"]; ok {
@@ -159,6 +161,12 @@ func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 			default:
 			}
 		}
+		if rawSavename, ok := data.(map[string]interface{})["SaveName"]; ok {
+			switch rawSavename := rawSavename.(type) {
+			case string:
+				savename = rawSavename
+			}
+		}
 	default:
 		return dummy, fmt.Errorf("save file is not a JSON object")
 	}
@@ -170,6 +178,7 @@ func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 
 	return TSSaveFile{
 		savefileLocation: loc,
+		savename:         savename,
 		revision:         revision,
 		resourceBundle:   bundles,
 	}, nil
@@ -186,7 +195,7 @@ func (s *TSSaveFile) GetAllResources() []*GameResource {
 	return resources
 }
 
-func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node) ([]byte, error) {
+func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node, savename string) ([]byte, error) {
 	s.revision.IncrementOrGen(seed)
 
 	file, err := os.ReadFile(s.savefileLocation)
@@ -194,13 +203,18 @@ func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node) ([]byte, error) {
 		return nil, err
 	}
 
-	finalPatch := s.GetJsonPatchBytesForPacked()
-	log.Println("Patching ", string(finalPatch))
-	patch, err := jsonpatch.DecodePatch(finalPatch)
+	patchSet, err := jsonpatch.DecodePatch(s.GetJsonPatchBytesForPacked())
 	if err != nil {
 		return nil, err
 	}
-	modified, err := patch.Apply(file)
+	if savename != "" {
+		namePatch, err := jsonpatch.DecodePatch([]byte(fmt.Sprintf(`[{"op":"replace","path":"/SaveName","value":"%s"}]`, savename)))
+		if err != nil {
+			return nil, err
+		}
+		patchSet = append(patchSet, namePatch...)
+	}
+	modified, err := patchSet.Apply(file)
 	if err != nil {
 		return nil, err
 	}
@@ -241,11 +255,18 @@ func getLargestSaveFileName(gameDir string) (string, error) {
 	return fmt.Sprintf("TS_Save_%d.json", largest+1), nil
 }
 
-func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string) error {
+func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string, saveName string) error {
 	patchset := s.GetJsonPatchBytesForPacked()
 	patch, err := jsonpatch.DecodePatch(patchset)
 	if err != nil {
 		return err
+	}
+	if len(saveName) > 0 {
+		saveNamePatch, err := jsonpatch.DecodePatch([]byte(fmt.Sprintf(`[{"op":"replace","path":"/SaveName","value":"%s"}]`, saveName)))
+		if err != nil {
+			return err
+		}
+		patch = append(patch, saveNamePatch...)
 	}
 
 	saveFileName, err := getLargestSaveFileName(gameDir)
@@ -334,6 +355,7 @@ func (s *TSSaveFile) ToView() SaveFileView {
 
 	return SaveFileView{
 		Filename:              filepath.Base(s.savefileLocation),
+		Savename:              s.savename,
 		Directory:             filepath.Dir(s.savefileLocation),
 		PackId:                s.revision.root,
 		PackRevision:          s.revision.revision,
