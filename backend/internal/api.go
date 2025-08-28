@@ -19,23 +19,21 @@ import (
 const NewFileEvent = "ttsc:newFile"
 
 type CacheManagerApi struct {
-	singletonLock        sync.Mutex
-	seed                 *snowflake.Node
-	ctx                  context.Context
-	propertiesController properties.Controller
-	packData             resource_map.PackData
-}
-
-func (api *CacheManagerApi) Startup(ctx context.Context) {
-	api.ctx = ctx
+	singletonLock         sync.Mutex
+	seed                  *snowflake.Node
+	ctx                   context.Context
+	applicationProperties properties.ApplicationPropertiesView
+	packData              resource_map.PackData
 }
 
 func NewCacheManagerApi() *CacheManagerApi {
 	var api = &CacheManagerApi{}
-
-	api.propertiesController = properties.InitPropertiesController()
-	dir := api.propertiesController.GetApplicationProperties().PackDataDir
-	packData, err := resource_map.InitPackDataFromFile(filepath.Join(dir, properties.PackDataYaml))
+	applicationProperties, err := properties.SetupDefaultAppProperties()
+	if err != nil {
+		panic(err)
+	}
+	api.applicationProperties = applicationProperties.ToView()
+	packData, err := resource_map.InitPackDataFromFile(filepath.Join(api.applicationProperties.PackDataDir, properties.PackDataYaml))
 	if err != nil {
 		panic(err)
 	}
@@ -50,14 +48,33 @@ func NewCacheManagerApi() *CacheManagerApi {
 	return api
 }
 
-func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
-	appProperties := api.propertiesController.GetApplicationProperties()
+func (api *CacheManagerApi) Startup(ctx context.Context) {
+	api.ctx = ctx
+}
 
-	return appProperties.ToView()
+func (api *CacheManagerApi) SetProperties(view properties.ApplicationPropertiesView) error {
+	var props properties.ApplicationProperties
+
+	if err := props.InitFrom(&view); err != nil {
+		return err
+	} else {
+		api.applicationProperties = view
+
+		if packData, err := resource_map.InitPackDataFromFile(filepath.Join(view.PackDataDir, properties.PackDataYaml)); err != nil {
+			return err
+		} else {
+			api.packData = packData
+			return nil
+		}
+	}
+}
+
+func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
+	return api.applicationProperties
 }
 
 func (api *CacheManagerApi) GetTabletopSaves() error {
-	pp := api.propertiesController.GetApplicationProperties()
+	pp := api.applicationProperties
 	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(pp.GameDir, pp.PackDataDir)
 	if err != nil {
 		return err
@@ -80,13 +97,13 @@ func (api *CacheManagerApi) GetTabletopSaves() error {
 	}
 }
 
-func (api *CacheManagerApi) WriteToPackData(saveLocation string, savename string) error {
+func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string) error {
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
 	defer api.singletonLock.Unlock()
 
-	appProperties := api.propertiesController.GetApplicationProperties()
+	appProperties := api.applicationProperties
 	gameDir := appProperties.GameDir
 	packDataDir := appProperties.PackDataDir
 
@@ -98,8 +115,8 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, savename string
 		return err
 	}
 
-	if len(savename) > 0 {
-		modifiedJsonBlob, err := saveData.GetPortableJsonBlob(api.seed, savename)
+	if len(saveName) > 0 {
+		modifiedJsonBlob, err := saveData.GetPortableJsonBlob(api.seed, saveName)
 		if err != nil {
 			return err
 		}
@@ -119,7 +136,7 @@ func (api *CacheManagerApi) ConstructPackedSave(saveLocation string, saveName st
 	}
 	defer api.singletonLock.Unlock()
 
-	appProperties := api.propertiesController.GetApplicationProperties()
+	appProperties := api.applicationProperties
 
 	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, appProperties.PackDataDir)
 	if err != nil {
@@ -128,6 +145,27 @@ func (api *CacheManagerApi) ConstructPackedSave(saveLocation string, saveName st
 	allResources := saveFile.GetAllResources()
 
 	if err = api.packData.LocalizePackedResources(allResources); err != nil {
+		return err
+	}
+
+	return saveFile.WriteNewSaveToSavesDir(filepath.Join(appProperties.GameDir), saveName)
+}
+
+func (api *CacheManagerApi) ConstructPackCachedSave(saveLocation string, saveName string) error {
+	if ok := api.singletonLock.TryLock(); !ok {
+		return errors.New("api busy")
+	}
+	defer api.singletonLock.Unlock()
+
+	appProperties := api.applicationProperties
+
+	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, appProperties.PackDataDir)
+	if err != nil {
+		return err
+	}
+	allResources := saveFile.GetAllResources()
+
+	if err := api.packData.CachePackedResources(allResources, appProperties.GameDir); err != nil {
 		return err
 	}
 

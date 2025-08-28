@@ -26,7 +26,7 @@ type GameResource struct {
 // it is not initialized from json save data for an obvious reason that it does not tell you if your resource is cached
 // same goes for `Packed` as it required knowledge of PackData content
 // `Steam` can become RemoteCached if the cached version of the resource exists on the disk
-// PackedLink : a local reference to a Packed file
+// PackLink : a local reference to a Packed file
 type ResourceStatus int
 
 const (
@@ -36,8 +36,29 @@ const (
 	RemoteCached
 	Steam
 	Packed
-	PackedLink
+	PackLink
+	PackCached
 )
+
+const steamApiUrlPrefix = "https://steamusercontent"
+
+func deduceResourceStatus(url string, packDir string) ResourceStatus {
+	if strings.HasPrefix(url, "file:///") {
+		if strings.HasPrefix(url[fileLen:], packDir) {
+			return PackLink
+		} else {
+			return Local
+		}
+	} else if strings.HasPrefix(url, "pack://") {
+		return Packed
+	} else if strings.HasPrefix(url, steamApiUrlPrefix) {
+		return Steam
+	} else if strings.HasPrefix(url, "http") {
+		return Remote
+	}
+
+	return Failed
+}
 
 var protocolPrefix = regexp.MustCompile(`^[^:]+:///?`)
 

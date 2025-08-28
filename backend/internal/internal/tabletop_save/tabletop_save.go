@@ -21,8 +21,6 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 )
 
-const steamApiUrlPrefix = "https://steamusercontent"
-
 type SaveRevision struct {
 	original []string
 	root     string
@@ -284,7 +282,7 @@ func (s *TSSaveFile) GetJsonPatchBytesForPacked(absPackLinks bool) []byte {
 	allResources := s.GetAllResources()
 	for _, res := range allResources {
 		// !absPackLinks => must relativize PackedLinks
-		if !absPackLinks && res.Status == PackedLink {
+		if !absPackLinks && res.Status == PackLink {
 			res.ResourceUrl = "pack://" + filepath.Base(res.ResourceUrl)
 			res.Status = Packed
 		}
@@ -326,7 +324,7 @@ func (s *TSSaveFile) ToView() SaveFileView {
 				localResources++
 			case Remote:
 				uncachedRes++
-			case PackedLink:
+			case PackLink:
 				packedResources++
 			case Packed:
 				packedResources++
@@ -365,24 +363,6 @@ func normalize(str *string) string {
 }
 
 const fileLen = len("file:///")
-
-func deduceResourceStatus(url string, packDir string) ResourceStatus {
-	if strings.HasPrefix(url, "file:///") {
-		if strings.HasPrefix(url[fileLen:], packDir) {
-			return PackedLink
-		} else {
-			return Local
-		}
-	} else if strings.HasPrefix(url, "pack://") {
-		return Packed
-	} else if strings.HasPrefix(url, steamApiUrlPrefix) {
-		return Steam
-	} else if strings.HasPrefix(url, "http") {
-		return Remote
-	}
-
-	return Failed
-}
 
 func getCachedResourceLoc(gameDir string, resourceUrl string) string {
 	encodedFilename := GetCacheFilename(filepath.Base(resourceUrl))

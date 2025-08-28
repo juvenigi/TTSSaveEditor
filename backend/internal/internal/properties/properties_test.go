@@ -1,99 +1,12 @@
 package properties
 
 import (
-	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"tts-cache-manager-cli/backend/internal/internal/properties/internal"
 )
 
-func newYAMLFixture(content string) io.Reader {
-	return strings.NewReader(content)
-}
-
-func TestParseProperties_ValidYAMLConfigFile(t *testing.T) {
-	properties, err2 := WriteDefaultProperties()
-	if err2 != nil {
-		t.Fatal(err2)
-	}
-	file, err := os.Open(properties)
-	if err != nil {
-		t.Fatal(err)
-	}
-	actual, err := newProperties(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(strings.TrimSpace(actual.GameDir)) == 0 {
-		t.Fatal("game dir is empty")
-	}
-	if len(strings.TrimSpace(actual.PackDataDir)) == 0 {
-		t.Fatal("pack data dir is empty")
-	}
-}
-
-func TestParseProperties_InvalidYAML(t *testing.T) {
-	badYAML := `: invalid yaml`
-	file := newYAMLFixture(badYAML)
-
-	_, err := newProperties(file)
-	if err == nil {
-		t.Fatal("Expected error for invalid YAML, got nil")
-	}
-}
-
-func TestParseProperties_MissingPropertyKeys(t *testing.T) {
-	file := newYAMLFixture("foo: true\n")
-
-	_, err := newProperties(file)
-	if err == nil {
-		t.Fatal("Expected error for missing property keys, got nil")
-	}
-}
-
-func TestGetConfigFilePath(t *testing.T) {
-	path := getCfgFilePath()
-	if path == "" {
-		t.Fatal("Expected GetConfigFilePath, got nothing")
-	}
-	t.Log(path)
-}
-
-func TestNewPropertiesController(t *testing.T) {
-	controller := InitPropertiesController()
-	properties := controller.GetApplicationProperties()
-	t.Log(properties)
-	executable, err := os.Executable()
-	if err != nil {
-		t.Fatal(err)
-	}
-	executableDir := filepath.Dir(executable)
-	files, err := os.ReadDir(executableDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	found := false
-	for _, file := range files {
-		if !file.IsDir() && strings.Compare(file.Name(), internal.ConfigFileYaml) == 0 {
-			t.Logf("file found: %v", filepath.Join(executableDir, file.Name()))
-			found = true
-			continue
-		}
-	}
-	if !found {
-		t.Fatal("Could not find config files")
-	}
-
-	if len(properties.GameDir) == 0 {
-		t.Fatal("GameDir is undefined")
-	}
-}
-
-// tests for documentation purposes only
+// the following tests for documentation purposes only
 
 func TestPathSeparator(t *testing.T) {
 	given := "C://foo/bar"

@@ -9,7 +9,31 @@ import (
 	"github.com/bodgit/sevenzip"
 )
 
-func ExtractFile(file *sevenzip.File, destination string) error {
+func ExtractArchive(archive string, destination string) error {
+	if err := os.MkdirAll(destination, 0755); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	r, err := sevenzip.OpenReader(archive)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		if err = extractFile(f, destination); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func extractFile(file *sevenzip.File, destination string) error {
 	rc, err := file.Open()
 	if err != nil {
 		return err
@@ -27,28 +51,4 @@ func ExtractFile(file *sevenzip.File, destination string) error {
 	}
 
 	return dest.Sync()
-}
-
-func ExtractArchive(archive string, destination string) error {
-	if err := os.MkdirAll(destination, 0755); err != nil {
-		if errors.Is(err, os.ErrExist) {
-			return nil
-		} else {
-			return err
-		}
-	}
-
-	r, err := sevenzip.OpenReader(archive)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	for _, f := range r.File {
-		if err = ExtractFile(f, destination); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

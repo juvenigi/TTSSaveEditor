@@ -1,17 +1,11 @@
 package properties
 
 import (
-	"bufio"
-	"io"
-	"log"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"tts-cache-manager-cli/backend/internal/internal/properties/internal"
 	"tts-cache-manager-cli/backend/internal/internal/resource_map"
-
-	"gopkg.in/yaml.v3"
 )
 
 const PackDataYaml = resource_map.PackDataYaml
@@ -27,28 +21,19 @@ type ApplicationPropertiesView struct {
 	PackDataDir     string
 }
 
+func (p *ApplicationProperties) InitFrom(v *ApplicationPropertiesView) error {
+	p.PackDataDir = v.PackDataDir
+	p.GameDir = v.GameDir
+
+	return p.validate()
+}
+
 func (p *ApplicationProperties) ToView() ApplicationPropertiesView {
 	return ApplicationPropertiesView{
 		OsPathSeparator: string(os.PathSeparator),
 		GameDir:         p.GameDir,
 		PackDataDir:     p.PackDataDir,
 	}
-}
-
-func newProperties(fileContent io.Reader) (ApplicationProperties, error) {
-	properties := ApplicationProperties{}
-
-	if err := yaml.NewDecoder(bufio.NewReader(fileContent)).Decode(&properties); err != nil {
-		return properties, err
-	}
-
-	properties.normalize()
-
-	if err := properties.validate(); err != nil {
-		return properties, err
-	}
-
-	return properties, nil
 }
 
 func (p *ApplicationProperties) normalize() {
@@ -78,45 +63,7 @@ func (p *ApplicationProperties) validate() error {
 	return nil
 }
 
-// todo: handle this more gracefully with a flag, don't use raw position-based arg we are not in the 20th century
-// returns an empty string if config file cannot be found
-func getCfgFilePath() string {
-	execPath, err := os.Executable()
-	if err != nil {
-		log.Println("Error getting executable path")
-		return ""
-	}
-	configDir := filepath.Dir(execPath)
-
-	files := getFilenames(configDir)
-	if len(files) == 0 {
-		log.Println("No config files found in ", configDir)
-		return ""
-	}
-	if slices.Contains(files, internal.ConfigFileYaml) {
-		return filepath.Join(configDir, internal.ConfigFileYaml)
-	}
-
-	return ""
-}
-
-func getFilenames(configDir string) []string {
-	files, err := os.ReadDir(configDir)
-	if err != nil {
-		log.Printf("error reading config directory %s: %v", configDir, err)
-		return nil
-	}
-
-	var filenames []string
-	for _, file := range files {
-		if !file.IsDir() {
-			filenames = append(filenames, file.Name())
-		}
-	}
-	return filenames
-}
-
-func GetDefaultApplicationProperties() (ApplicationProperties, error) {
+func SetupDefaultAppProperties() (ApplicationProperties, error) {
 	var blank ApplicationProperties
 	gameDir, err := internal.GetDefaultGameDir()
 	if err != nil {
@@ -131,30 +78,4 @@ func GetDefaultApplicationProperties() (ApplicationProperties, error) {
 		GameDir:     gameDir,
 		PackDataDir: packData,
 	}, nil
-}
-
-func WriteDefaultProperties() (string, error) {
-	executable, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-
-	properties, err := GetDefaultApplicationProperties()
-	if err != nil {
-		return "", err
-	}
-
-	blob, err := yaml.Marshal(properties)
-	if err != nil {
-		return "", err
-	}
-
-	configFilepath := filepath.Join(filepath.Dir(executable), internal.ConfigFileYaml)
-	err = os.WriteFile(configFilepath, blob, 0755)
-	if err != nil {
-		return "", err
-	}
-
-	return configFilepath, nil
-
 }

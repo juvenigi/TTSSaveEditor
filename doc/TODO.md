@@ -1,3 +1,15 @@
+# KISS patch
+
+- simplify app properties initialization (you are supposed to receive it from the frontend anyway)
+    - make sure the fallback never fails
+- simplify resource states
+    - local : absolute path
+    - localCache : cache hack
+    - remoteCache : is a remote file but the cache can be found
+    - remote : remote (http) without a cached entry
+    - steam : uncached steam resource, cannot fetch due to no access
+    - packed : remote file or checksum was found in packdata
+
 # Release version 1
 
 - config via yaml located next to exe

@@ -431,16 +431,9 @@ func (rm *PackData) WriteSaveToPackData(originalName string, blob []byte) error 
 const packLen = len("pack://")
 
 func (rm *PackData) LocalizePackedResources(resources []*tabletop_save.GameResource) error {
-	var packJsonLocs []string
-	entries, err := os.ReadDir(rm.packDataDir)
+	packJsonLocs, err := getAllFilesInPackData(rm)
 	if err != nil {
 		return err
-	}
-	for _, entry := range entries {
-		// oh no, terrible inefficiency!
-		if !entry.IsDir() && !strings.HasSuffix(entry.Name(), ".pack.json") && !strings.HasSuffix(entry.Name(), ".yaml") {
-			packJsonLocs = append(packJsonLocs, entry.Name())
-		}
 	}
 
 	for idx := range resources {
@@ -463,6 +456,21 @@ func (rm *PackData) LocalizePackedResources(resources []*tabletop_save.GameResou
 	}
 
 	return nil
+}
+
+func getAllFilesInPackData(rm *PackData) ([]string, error) {
+	var packJsonLocs []string
+	entries, err := os.ReadDir(rm.packDataDir)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		// oh no, terrible inefficiency!
+		if !entry.IsDir() && !strings.HasSuffix(entry.Name(), ".pack.json") && !strings.HasSuffix(entry.Name(), ".yaml") {
+			packJsonLocs = append(packJsonLocs, entry.Name())
+		}
+	}
+	return packJsonLocs, nil
 }
 
 func (rm *PackData) MergeWith(otherDir string, makeBackup bool) error {
@@ -568,6 +576,63 @@ func (rm *PackData) MakeBackup() error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (rm *PackData) CachePackedResources(resList []*tabletop_save.GameResource, gameDir string) error {
+	for _, res := range resList {
+		if res.Status == tabletop_save.Packed {
+			if err := copyPackedToGameCache(res, gameDir, rm.packDataDir); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func copyPackedToGameCache(res *tabletop_save.GameResource, gameDir string, packDataDir string) error {
+	if res.Status != tabletop_save.Packed {
+		return fmt.Errorf("unexpected resource type %d", res.Status)
+	}
+
+	subfolder := "unpacked"
+	var lastSlash = strings.LastIndex(res.JsonPointer, "/")
+	lastJsonPointerSegment := res.JsonPointer[lastSlash+1:]
+
+	var filename = strings.TrimPrefix(res.ResourceUrl, "pack://")
+
+	var gameCacheFolder string
+	switch lastJsonPointerSegment {
+	case "AssetBundleURL":
+		gameCacheFolder = "Assetbundles"
+
+	case "ImageURL", "ImageSecondaryURL", "DiffuseURL", "NormalURL", "SpecularURL", "SkyURL":
+		gameCacheFolder = "Images"
+
+	case "MeshURL", "ColliderURL":
+		gameCacheFolder = "Models"
+
+	case "AudioURL":
+		gameCacheFolder = "Audio"
+
+	case "XmlUIURL":
+		gameCacheFolder = "UI"
+
+	default:
+		return fmt.Errorf("unknown json pointer: %s", lastJsonPointerSegment)
+	}
+
+	srcPath := filepath.Join(packDataDir, filename)
+
+	finalPath := filepath.Join(gameDir, gameCacheFolder, subfolder, filename)
+
+	if err := wrapped_io.CopyFile(srcPath, finalPath); err != nil {
+		return err
+	}
+
+	res.ResourceUrl = fmt.Sprintf("%s/%s", subfolder, filename)
 
 	return nil
 }
