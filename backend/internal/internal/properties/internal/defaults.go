@@ -35,11 +35,12 @@ func CreateDefaultPackData() (string, error) {
 		return "", errors.Join(errors.New("unable to get executable path"), err)
 	}
 	resPackPath := filepath.Join(filepath.Dir(exePath), packDataFolder)
-	if err = os.Mkdir(resPackPath, 0755); err != nil && !os.IsExist(err) {
+	if err = os.Mkdir(resPackPath, 0755); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return resPackPath, nil
+		}
 		return "", errors.Join(errors.New("unable to create resource data dir"), err)
 	}
-	if err != nil {
-		return "", err
-	}
+
 	return resPackPath, nil
 }

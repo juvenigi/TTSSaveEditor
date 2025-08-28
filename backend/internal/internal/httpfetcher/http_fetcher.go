@@ -3,6 +3,7 @@ package httpfetcher
 import (
 	"context"
 	"crypto/sha3"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -22,6 +23,10 @@ func GetResourceAsync(ctx context.Context, url string) (*UrlResource, error) {
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("non-ok status: %s", resp.Status)
 	}
 
 	respBody := resp.Body

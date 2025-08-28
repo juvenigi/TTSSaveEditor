@@ -32,6 +32,11 @@ func NewCacheManagerApi() *CacheManagerApi {
 	if err != nil {
 		panic(err)
 	}
+
+	err = applicationProperties.Validate()
+	if err != nil {
+		panic(err)
+	}
 	api.applicationProperties = applicationProperties.ToView()
 	packData, err := resource_map.InitPackDataFromFile(filepath.Join(api.applicationProperties.PackDataDir, properties.PackDataYaml))
 	if err != nil {

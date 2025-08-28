@@ -25,7 +25,7 @@ func (p *ApplicationProperties) InitFrom(v *ApplicationPropertiesView) error {
 	p.PackDataDir = v.PackDataDir
 	p.GameDir = v.GameDir
 
-	return p.validate()
+	return p.Validate()
 }
 
 func (p *ApplicationProperties) ToView() ApplicationPropertiesView {
@@ -41,7 +41,7 @@ func (p *ApplicationProperties) normalize() {
 	p.GameDir = filepath.FromSlash(p.GameDir)
 }
 
-func (p *ApplicationProperties) validate() error {
+func (p *ApplicationProperties) Validate() error {
 	if _, err := os.Lstat(p.GameDir); err != nil {
 		return err
 	}

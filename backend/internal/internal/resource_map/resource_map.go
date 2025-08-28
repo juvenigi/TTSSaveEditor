@@ -597,7 +597,6 @@ func copyPackedToGameCache(res *tabletop_save.GameResource, gameDir string, pack
 		return fmt.Errorf("unexpected resource type %d", res.Status)
 	}
 
-	subfolder := "unpacked"
 	var lastSlash = strings.LastIndex(res.JsonPointer, "/")
 	lastJsonPointerSegment := res.JsonPointer[lastSlash+1:]
 
@@ -608,7 +607,7 @@ func copyPackedToGameCache(res *tabletop_save.GameResource, gameDir string, pack
 	case "AssetBundleURL":
 		gameCacheFolder = "Assetbundles"
 
-	case "ImageURL", "ImageSecondaryURL", "DiffuseURL", "NormalURL", "SpecularURL", "SkyURL":
+	case "ImageURL", "ImageSecondaryURL", "DiffuseURL", "NormalURL", "SpecularURL", "SkyURL", "FaceURL", "BackURL":
 		gameCacheFolder = "Images"
 
 	case "MeshURL", "ColliderURL":
@@ -626,13 +625,17 @@ func copyPackedToGameCache(res *tabletop_save.GameResource, gameDir string, pack
 
 	srcPath := filepath.Join(packDataDir, filename)
 
-	finalPath := filepath.Join(gameDir, gameCacheFolder, subfolder, filename)
+	finalPath := filepath.Join(gameDir, "Mods", gameCacheFolder, filename)
+
+	if err := os.MkdirAll(filepath.Dir(finalPath), 0755); err != nil && !errors.Is(err, os.ErrExist) {
+		return err
+	}
 
 	if err := wrapped_io.CopyFile(srcPath, finalPath); err != nil {
 		return err
 	}
 
-	res.ResourceUrl = fmt.Sprintf("%s/%s", subfolder, filename)
+	res.ResourceUrl = filename
 
 	return nil
 }
