@@ -112,7 +112,8 @@
         - export / pack
         - import / unpack
 - [/] React frontend
-    - [ ] TanStack Router
+    - [X] TanStack Router
+    - [ ] Add creation / modification date to disambiguate saves 
     - [ ] Service / Command Layer
     - [ ] Store / Reducer
     - [X] selectors / ViewModel

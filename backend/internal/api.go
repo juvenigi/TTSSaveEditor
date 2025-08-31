@@ -78,9 +78,9 @@ func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView
 	return api.applicationProperties
 }
 
-func (api *CacheManagerApi) GetTabletopSaves() error {
+func (api *CacheManagerApi) GetTabletopSaves(scanDir string) error {
 	pp := api.applicationProperties
-	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(pp.GameDir, pp.PackDataDir)
+	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(scanDir, pp.PackDataDir)
 	if err != nil {
 		return err
 	}

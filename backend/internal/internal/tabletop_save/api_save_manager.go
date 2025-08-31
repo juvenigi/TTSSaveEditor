@@ -8,9 +8,11 @@ import (
 	"tts-cache-manager-cli/util"
 )
 
-func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan util.Result[TSSaveFile]) {
+func GetTabletopSaveFilesAsync(scanDir string, packDataDir string) (error, chan util.Result[TSSaveFile]) {
 	resChan := make(chan util.Result[TSSaveFile])
-	filenames, err := WalkDirForSaveNames(gameDir)
+	sameAsPackData := strings.EqualFold(packDataDir, scanDir)
+
+	filenames, err := WalkDirForSaveNames(scanDir, sameAsPackData)
 	if err != nil {
 		close(resChan)
 		return err, resChan
@@ -39,14 +41,20 @@ func GetTabletopSaveFilesAsync(gameDir string, packDataDir string) (error, chan 
 	return nil, resChan
 }
 
-func WalkDirForSaveNames(gameDir string) ([]string, error) {
+// todo: fix cyclic import of pack data json
+func WalkDirForSaveNames(scanDir string, isPackData bool) ([]string, error) {
 	var saves []string
 	metadataSkipped := false
+	metadataName := "SaveFileInfos.json"
+	if isPackData {
+		metadataName = "resource-map.json"
+	}
+
 	walkDirFunc := func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		} else if !info.IsDir() && strings.HasSuffix(info.Name(), ".json") {
-			if metadataSkipped || strings.Compare(info.Name(), "SaveFileInfos.json") != 0 {
+			if metadataSkipped || strings.Compare(info.Name(), metadataName) != 0 {
 				saves = append(saves, path)
 			} else {
 				metadataSkipped = true
@@ -55,7 +63,7 @@ func WalkDirForSaveNames(gameDir string) ([]string, error) {
 		return nil
 	}
 
-	saveFileDir := filepath.Join(gameDir, "Saves")
+	saveFileDir := filepath.Join(scanDir)
 	if err := filepath.WalkDir(saveFileDir+string(os.PathSeparator), walkDirFunc); err != nil {
 		return nil, err
 	} else {

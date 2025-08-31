@@ -15,27 +15,27 @@ interface DataTableProps<TData, TValue> {
 export function SaveFileTable<TData, TValue>({
                                                columns,
                                                data,
-                                             }: DataTableProps<TData, TValue>) {
+                                             }: DataTableProps<TData, TValue>, packData = false) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     defaultColumn: {
-      size: undefined, // Don't define size
+      size: undefined, // Don't define size as it gets defined using column definition
     },
   });
 
   // todo: decouple from useSaveTableStore
 
   const saveFiles = useSaveTableStore(state => state.activeSavefiles)
+  const packDataFiles = useSaveTableStore(state => state.packDataSavefiles)
   const selectFile = useMigrationDialogStore(state => state.openWith)
   const selectById = (rowIdx: string) => {
     const idx = Number.parseInt(rowIdx, 10)
     if (idx === saveFiles.length) {
       return
     }
-    const save = saveFiles[idx];
-
+    const save = packData ? packDataFiles[idx] : saveFiles[idx];
     const saveLoc = save.directory + getOsPathSeparator() + save.filename
     selectFile(saveLoc, "PACK_DATA")
   }

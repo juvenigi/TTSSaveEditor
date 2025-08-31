@@ -1,5 +1,8 @@
 import type {ColumnDef} from "@tanstack/react-table";
 import type {GameSaveFile} from "@/store/save-collection.ts";
+import {HoverCard, HoverCardTrigger} from "@/components/ui/hover-card.tsx";
+import {HoverCardContent} from "@radix-ui/react-hover-card";
+import {Card, CardContent} from "@/components/ui/card.tsx";
 
 export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
   {
@@ -10,7 +13,26 @@ export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
       const object = file.objectCount === 1 ? "object" : "objects";
       const isLongFilename = file.filename.length > 30;
 
-      return `${isLongFilename ? "..." + file.filename.substring(file.filename.length - 30) : file.filename} (${file.objectCount} ${object})`;
+      const finalFilename = `${isLongFilename ? "..." + file.filename.substring(file.filename.length - 30) : file.filename}`;
+
+      // todo: the hoverCard->Card is a hack
+      return (
+        <HoverCard>
+          {file.savename.length === 0
+            ? <HoverCardTrigger><i>{finalFilename}</i>{` (${file.objectCount} ${object})`}</HoverCardTrigger>
+            : <HoverCardTrigger>{`${file.savename} (${file.objectCount} ${object})`}</HoverCardTrigger>}
+
+          <HoverCardContent>
+            <Card>
+              <CardContent style={{textAlign: "left"}}>
+                {file.savename.length === 0 ? <i>save name is blank</i> : <p>save name: <b>{file.savename}</b></p>}
+                <p>file name: <b>{finalFilename}</b></p>
+              </CardContent>
+            </Card>
+
+          </HoverCardContent>
+        </HoverCard>
+      );
     },
     meta: {
       className: "w-[60%] min-w-[200px] max-w-[60vw]",

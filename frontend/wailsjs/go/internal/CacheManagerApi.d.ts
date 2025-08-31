@@ -10,7 +10,7 @@ export function Delete(arg1:string):Promise<void>;
 
 export function GetProperties():Promise<properties.ApplicationPropertiesView>;
 
-export function GetTabletopSaves():Promise<void>;
+export function GetTabletopSaves(arg1:string):Promise<void>;
 
 export function MergePackDataWithAnother(arg1:string,arg2:boolean):Promise<void>;
 

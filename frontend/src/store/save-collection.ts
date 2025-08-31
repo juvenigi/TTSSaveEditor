@@ -21,22 +21,26 @@ export type GameSaveFile = z.infer<typeof GameSaveFileSchema>;
 
 export type LoadingState = "loading" | "done" | "error"
 
+export type NewFileType = "packdata-file" | "game-savefile"
+
 export type FileListState = {
   rootSaveDir: string
   activeDir: string[]
   childSegments: string[]
   allSavefiles: GameSaveFile[]
   activeSavefiles: GameSaveFile[]
+  packDataSavefiles: GameSaveFile[]
   activeFile?: GameSaveFile
   loading: LoadingState
 }
 
-
 export type FileListActions = {
   addFile: (file: GameSaveFile) => void
+  addPackDataFile: (file: GameSaveFile) => void
   setActiveSegment: (segment: string | "..") => void
   setChildSegments: () => void
   retToParent: (times: number) => void
+  clearPackDataFiles: () => void
 }
 
 type FileListStore = FileListState & FileListActions
@@ -48,6 +52,7 @@ export const useSaveTableStore = create<FileListStore>((set) => ({
   childSegments: [],
   allSavefiles: [],
   activeSavefiles: [],
+  packDataSavefiles: [],
 
   retToParent: (times: number) => {
     set((state) => ({
@@ -75,7 +80,6 @@ export const useSaveTableStore = create<FileListStore>((set) => ({
     set(updateActiveSavefiles);
   },
   addFile: (file) => {
-
     set((state) => {
       const fileDirSegs = file.directory.split(getOsPathSeparator())
       let activeFilesUpdate = state.activeSavefiles;
@@ -85,6 +89,20 @@ export const useSaveTableStore = create<FileListStore>((set) => ({
       return ({
         activeSavefiles: activeFilesUpdate,
         allSavefiles: [file, ...state.allSavefiles],
+      });
+    })
+  },
+  addPackDataFile: (file) => {
+    set((state) => {
+      return ({
+        packDataSavefiles: [file, ...state.packDataSavefiles],
+      });
+    })
+  },
+  clearPackDataFiles: () => {
+    set(() => {
+      return ({
+        packDataSavefiles: [],
       });
     })
   },

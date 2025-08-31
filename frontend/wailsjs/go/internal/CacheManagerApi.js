@@ -18,8 +18,8 @@ export function GetProperties() {
   return window['go']['internal']['CacheManagerApi']['GetProperties']();
 }
 
-export function GetTabletopSaves() {
-  return window['go']['internal']['CacheManagerApi']['GetTabletopSaves']();
+export function GetTabletopSaves(arg1) {
+  return window['go']['internal']['CacheManagerApi']['GetTabletopSaves'](arg1);
 }
 
 export function MergePackDataWithAnother(arg1, arg2) {
