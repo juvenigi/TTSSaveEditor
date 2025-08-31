@@ -23,7 +23,7 @@ func TestCacheManagerApi_ConstructPackedSave(t *testing.T) {
 	api.Startup(t.Context())
 
 	packDir := api.applicationProperties.PackDataDir
-	if err := api.ConstructPackedSave(filepath.Join(packDir, "TS_Save_68.pack.json"), "Serrogo testo"); err != nil {
+	if err := api.CreateSingleplayerSave(filepath.Join(packDir, "TS_Save_68.pack.json"), "Serrogo testo"); err != nil {
 		t.Fatal(err)
 	}
 }

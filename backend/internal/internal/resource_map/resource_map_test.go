@@ -1,7 +1,8 @@
 package resource_map
 
 import (
-	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -24,22 +25,24 @@ func TestPatternMatching(t *testing.T) {
 
 }
 
-type MockEntry struct {
-	isDir bool
-	name  string
-}
+func TestCreateBlankPackDataJson(t *testing.T) {
+	loc, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	jsonLoc := filepath.Join(filepath.Dir(loc), PackDataJson)
 
-func (m *MockEntry) Name() string {
-	return m.name
-}
+	err = CreateBlankPackDataJson(jsonLoc)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-func (m *MockEntry) Info() (fs.FileInfo, error) {
-	return nil, nil
-}
+	pd, err := InitPackDataFromFile(jsonLoc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pd.packDataDir == "" {
+		t.Fatal("pd is nil")
+	}
 
-func (m *MockEntry) Type() fs.FileMode {
-	return 0
-}
-func (m *MockEntry) IsDir() bool {
-	return m.isDir
 }

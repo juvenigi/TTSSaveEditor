@@ -8,11 +8,11 @@ import (
 	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 )
 
-const PackDataYaml = resource_map.PackDataYaml
+const PackDataJson = resource_map.PackDataJson
 
 type ApplicationProperties struct {
-	GameDir     string `yaml:"game-dir"`
-	PackDataDir string `yaml:"pack-data-dir"`
+	GameDir     string
+	PackDataDir string
 }
 
 type ApplicationPropertiesView struct {
@@ -52,12 +52,12 @@ func (p *ApplicationProperties) Validate() error {
 	}
 
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.Compare(entry.Name(), PackDataYaml) == 0 {
+		if !entry.IsDir() && strings.Compare(entry.Name(), PackDataJson) == 0 {
 			return nil
 		}
 	}
-	packDataYamlLoc := filepath.Join(p.PackDataDir, PackDataYaml)
-	if err = resource_map.CreateBlankPackDataYaml(packDataYamlLoc); err != nil {
+	packDataYamlLoc := filepath.Join(p.PackDataDir, PackDataJson)
+	if err = resource_map.CreateBlankPackDataJson(packDataYamlLoc); err != nil {
 		return err
 	}
 	return nil

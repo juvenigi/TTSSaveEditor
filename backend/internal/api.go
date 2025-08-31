@@ -38,7 +38,7 @@ func NewCacheManagerApi() *CacheManagerApi {
 		panic(err)
 	}
 	api.applicationProperties = *applicationProperties.ToView()
-	packData, err := resource_map.InitPackDataFromFile(filepath.Join(api.applicationProperties.PackDataDir, properties.PackDataYaml))
+	packData, err := resource_map.InitPackDataFromFile(filepath.Join(api.applicationProperties.PackDataDir, properties.PackDataJson))
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +65,7 @@ func (api *CacheManagerApi) SetProperties(view properties.ApplicationPropertiesV
 	} else {
 		api.applicationProperties = view
 
-		if packData, err := resource_map.InitPackDataFromFile(filepath.Join(view.PackDataDir, properties.PackDataYaml)); err != nil {
+		if packData, err := resource_map.InitPackDataFromFile(filepath.Join(view.PackDataDir, properties.PackDataJson)); err != nil {
 			return err
 		} else {
 			api.packData = packData
@@ -134,8 +134,8 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string
 	return nil
 }
 
-// ConstructPackedSave note : saveName != savefile name, save name is what the game will show you in the save selection
-func (api *CacheManagerApi) ConstructPackedSave(saveLocation string, saveName string) error {
+// CreateSingleplayerSave note : saveName != savefile name, save name is what the game will show you in the save selection
+func (api *CacheManagerApi) CreateSingleplayerSave(saveLocation string, saveName string) error {
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -202,13 +202,4 @@ func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup
 	}
 
 	return api.packData.MergeWith(srcLoc, makeBackup)
-}
-
-func (api *CacheManagerApi) ZipPackData() error {
-	if err := api.packData.FlushToDisk(); err != nil {
-		return err
-	}
-
-	api.packData.Zip()
-
 }

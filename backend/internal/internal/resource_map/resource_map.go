@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha3"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -20,14 +21,12 @@ import (
 	"tts-cache-manager-cli/backend/internal/internal/httpfetcher"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save"
 	"tts-cache-manager-cli/backend/internal/internal/wrapped_io"
-
-	"gopkg.in/yaml.v3"
 )
 
-const PackDataYaml = "resource-map.yaml"
+const PackDataJson = "resource-map.json"
 
-type yamlPackData struct {
-	UrlArchive map[string]string `yaml:"url-map"`
+type packDataJson struct {
+	UrlArchive map[string]string `json:"url-map"`
 }
 
 type PackData struct {
@@ -37,8 +36,8 @@ type PackData struct {
 	urlArchive      map[string]string
 }
 
-func CreateBlankPackDataYaml(packDataLocation string) error {
-	var yamlData yamlPackData
+func CreateBlankPackDataJson(packDataLocation string) error {
+	var jsonD packDataJson
 	file, err := os.OpenFile(packDataLocation, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
 	if err != nil {
 		if errors.Is(err, fs.ErrExist) {
@@ -47,7 +46,7 @@ func CreateBlankPackDataYaml(packDataLocation string) error {
 		return err
 	}
 	defer file.Close()
-	if err = yaml.NewEncoder(file).Encode(yamlData); err != nil {
+	if err = json.NewEncoder(file).Encode(jsonD); err != nil {
 		return err
 	}
 
@@ -57,7 +56,7 @@ func CreateBlankPackDataYaml(packDataLocation string) error {
 func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
 	var alreadyClosed bool
 	var result PackData
-	var yamlPd yamlPackData
+	var jsonPd packDataJson
 	result.packDataDir = filepath.Dir(resourceMapFile)
 	result.packDataYamlLoc = resourceMapFile
 	result.sha3Archive = make(map[string]string)
@@ -74,14 +73,14 @@ func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
 	}(src, alreadyClosed)
 
 	// todo: could one use a better solution here? (invalid yaml gets skipped without the user knowing)
-	if err = yaml.NewDecoder(src).Decode(&yamlPd); err != nil {
+	if err = json.NewDecoder(src).Decode(&jsonPd); err != nil {
 		return result, err
 	}
 	_ = src.Close()
 	alreadyClosed = true
 
-	if yamlPd.UrlArchive != nil {
-		result.urlArchive = yamlPd.UrlArchive
+	if jsonPd.UrlArchive != nil {
+		result.urlArchive = jsonPd.UrlArchive
 	}
 
 	entries, err := os.ReadDir(result.packDataDir)
@@ -89,13 +88,12 @@ func InitPackDataFromFile(resourceMapFile string) (PackData, error) {
 		return result, err
 	}
 
-	extensions := []string{".yaml", ".yml", ".json"}
 	for _, entry := range entries {
-		if entry.IsDir() || slices.Contains(extensions, filepath.Ext(entry.Name())) {
+		if entry.IsDir() || strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
 		_, sum := wrapped_io.GetFileAndChecksum(filepath.Join(result.packDataDir, entry.Name()))
-		result.sha3Archive[entry.Name()] = hex.EncodeToString(sum)
+		result.sha3Archive[hex.EncodeToString(sum)] = entry.Name()
 	}
 
 	if err = result.cleanup(); err != nil {
@@ -112,7 +110,7 @@ func (rm *PackData) FlushToDisk() error {
 	}
 	defer file.Close()
 
-	if err = yaml.NewEncoder(file).Encode(yamlPackData{
+	if err = json.NewEncoder(file).Encode(packDataJson{
 		UrlArchive: rm.urlArchive,
 	}); err != nil {
 		return err
@@ -482,7 +480,7 @@ func (rm *PackData) MergeWith(otherDir string, makeBackup bool) error {
 		}
 	}
 
-	foreignPd, err := InitPackDataFromFile(filepath.Join(otherDir, PackDataYaml))
+	foreignPd, err := InitPackDataFromFile(filepath.Join(otherDir, PackDataJson))
 	if err != nil {
 		return err
 	}

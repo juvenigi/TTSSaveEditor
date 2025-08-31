@@ -7,11 +7,7 @@ import (
 	"runtime"
 )
 
-const (
-	packDataFolder = "PackData"
-
-	ConfigFileYaml = "properties.yaml"
-)
+const packDataFolder = "PackData"
 
 func GetDefaultGameDir() (string, error) {
 	home, err := os.UserHomeDir()

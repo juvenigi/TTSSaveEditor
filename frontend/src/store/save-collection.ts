@@ -48,6 +48,7 @@ export const useSaveTableStore = create<FileListStore>((set) => ({
   childSegments: [],
   allSavefiles: [],
   activeSavefiles: [],
+
   retToParent: (times: number) => {
     set((state) => ({
       activeDir: state.activeDir.slice(0, Math.max(0, state.activeDir.length - times)),
