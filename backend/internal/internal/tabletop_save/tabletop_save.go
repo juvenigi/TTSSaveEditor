@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,85 +19,6 @@ import (
 	"github.com/bwmarrin/snowflake"
 	jsonpatch "github.com/evanphx/json-patch"
 )
-
-type SaveRevision struct {
-	original []string
-	root     string
-	revision int
-}
-
-var saveRevPattern = regexp.MustCompile("__packrev([^_]+)_?(.*)$")
-
-func (rev *SaveRevision) IsBlank() bool {
-	return len(rev.root) == 0
-}
-
-func (rev *SaveRevision) Parse(valueFromJson []string) error {
-	dollarIdx := slices.IndexFunc(valueFromJson, func(s string) bool {
-		return strings.HasPrefix(s, "__packrev")
-	})
-	if dollarIdx != -1 {
-		submatches := saveRevPattern.FindStringSubmatch(valueFromJson[dollarIdx])
-		rev.original = append(valueFromJson[:dollarIdx], valueFromJson[dollarIdx+1:]...)
-		if len(submatches) != 3 {
-			return nil
-		}
-		rev.root = submatches[1]
-		if len(submatches[2]) > 0 {
-			var err error
-			int64Decode, err := base52.Decode(submatches[2])
-			if err != nil {
-				return err
-			}
-			rev.revision = int(int64Decode)
-			return err
-		}
-
-	} else {
-		rev.original = valueFromJson
-	}
-	return nil
-}
-
-func (rev *SaveRevision) Serialize() []byte {
-	packrevStr, err := rev.String()
-	if err != nil {
-		return nil
-	}
-	allTags := append(rev.original, packrevStr)
-	marshal, err := json.Marshal(allTags)
-	if err != nil {
-		return nil
-	}
-	return []byte(fmt.Sprintf(`{"op":"replace","path":"/Tags","value":%s}`, marshal))
-}
-
-func (rev *SaveRevision) String() (string, error) {
-	if len(rev.root) == 0 {
-		return "", errors.New("invalid save revision")
-	}
-	if rev.revision == 0 {
-		return fmt.Sprintf("__packrev%s", rev.root), nil
-	}
-	encode, err := base52.Encode(int64(rev.revision))
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("__packrev%s_%s", rev.root, encode), nil
-}
-
-func (rev *SaveRevision) IncrementOrGen(seed *snowflake.Node) {
-	if len(rev.root) == 0 {
-		rev.revision = 0
-		encode, err := base52.Encode(seed.Generate().Int64())
-		if err != nil {
-			panic(err)
-		}
-		rev.root = encode
-	} else {
-		rev.revision++
-	}
-}
 
 type TSSaveFile struct {
 	savefileLocation string
@@ -126,38 +46,36 @@ type TagsAndSaveNamePartialJson struct {
 }
 
 // GetTabletopSaveFile note: `seed` param is nillable
-func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
-	var dummy TSSaveFile
-
+func GetTabletopSaveFile(loc string, packDataDir string) (*TSSaveFile, error) {
 	blobBytes, err := os.ReadFile(loc)
 	if err != nil {
-		return dummy, err
+		return nil, err
 	}
 
-	var data any
-	if err := json.Unmarshal(blobBytes, &data); err != nil {
-		return dummy, err
+	var unmarshalledData any
+	if err := json.Unmarshal(blobBytes, &unmarshalledData); err != nil {
+		return nil, err
 	}
 
 	var tagsAndSave TagsAndSaveNamePartialJson
 	err = json.Unmarshal(blobBytes, &tagsAndSave)
 	if err != nil {
-		return dummy, err
+		return nil, err
 	}
 
 	var revision SaveRevision
 	if tagsAndSave.Tags != nil {
 		if err := revision.Parse(tagsAndSave.Tags); err != nil {
-			return dummy, err
+			return nil, err
 		}
 	}
 
-	bundles, err := ParseResourcesBundles(data, packDataDir)
+	bundles, err := ParseResourcesBundles(unmarshalledData, packDataDir)
 	if err != nil {
-		return dummy, err
+		return nil, err
 	}
 
-	return TSSaveFile{
+	return &TSSaveFile{
 		savefileLocation: loc,
 		savename:         tagsAndSave.SaveName,
 		revision:         revision,
@@ -165,7 +83,7 @@ func GetTabletopSaveFile(loc string, packDataDir string) (TSSaveFile, error) {
 	}, nil
 }
 
-// note: may contain duplicates
+// GetAllResources note: may contain duplicates
 func (s *TSSaveFile) GetAllResources() []*GameResource {
 	var resources []*GameResource
 	for _, bundle := range s.resourceBundle {
@@ -176,7 +94,7 @@ func (s *TSSaveFile) GetAllResources() []*GameResource {
 	return resources
 }
 
-func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node, savename string) ([]byte, error) {
+func (s *TSSaveFile) IntoPortable(seed *snowflake.Node, saveName string) ([]byte, error) {
 	s.revision.IncrementOrGen(seed)
 
 	file, err := os.ReadFile(s.savefileLocation)
@@ -188,8 +106,8 @@ func (s *TSSaveFile) GetPortableJsonBlob(seed *snowflake.Node, savename string) 
 	if err != nil {
 		return nil, err
 	}
-	if savename != "" {
-		namePatch, err := jsonpatch.DecodePatch([]byte(fmt.Sprintf(`[{"op":"replace","path":"/SaveName","value":"%s"}]`, savename)))
+	if saveName != "" {
+		namePatch, err := jsonpatch.DecodePatch([]byte(fmt.Sprintf(`[{"op":"replace","path":"/SaveName","value":"%s"}]`, saveName)))
 		if err != nil {
 			return nil, err
 		}
@@ -275,14 +193,13 @@ func (s *TSSaveFile) WriteNewSaveToSavesDir(gameDir string, saveName string) err
 	return nil
 }
 
-func (s *TSSaveFile) GetJsonPatchBytesForPacked(absPackLinks bool) []byte {
+func (s *TSSaveFile) GetJsonPatchBytesForPacked(keepPaths bool) []byte {
 	revisionBytes := s.revision.Serialize()
 
 	var patches []string
 	allResources := s.GetAllResources()
 	for _, res := range allResources {
-		// !absPackLinks => must relativize PackedLinks
-		if !absPackLinks && res.Status == PackLink {
+		if !keepPaths && res.Status == PackPath {
 			res.ResourceUrl = "pack://" + filepath.Base(res.ResourceUrl)
 			res.Status = Packed
 		}
@@ -302,16 +219,17 @@ func (s *TSSaveFile) GetJsonPatchBytesForPacked(absPackLinks bool) []byte {
 		sb.WriteString(patch)
 		sb.WriteString(",")
 	}
+
 	concatenated := []byte(sb.String())
-	if len(concatenated) == 1 {
-		return append(concatenated, []byte("]")...)
-	} else {
+	if len(concatenated) > 1 {
 		// remove trailing comma
 		return append(concatenated[:len(concatenated)-1], []byte("]")...)
+	} else {
+		return append(concatenated, []byte("]")...)
 	}
 }
 
-func (s *TSSaveFile) ToView() SaveFileView {
+func (s *TSSaveFile) ToView() *SaveFileView {
 	objectCount := len(s.resourceBundle)
 	uncachedRes := 0
 	remoteCached := 0
@@ -324,7 +242,7 @@ func (s *TSSaveFile) ToView() SaveFileView {
 				localResources++
 			case Remote:
 				uncachedRes++
-			case PackLink:
+			case PackPath:
 				packedResources++
 			case Packed:
 				packedResources++
@@ -337,7 +255,7 @@ func (s *TSSaveFile) ToView() SaveFileView {
 		}
 	}
 
-	return SaveFileView{
+	return &SaveFileView{
 		Filename:              filepath.Base(s.savefileLocation),
 		Savename:              s.savename,
 		Directory:             filepath.Dir(s.savefileLocation),
@@ -364,70 +282,113 @@ func normalize(str *string) string {
 
 const fileLen = len("file:///")
 
-func getCachedResourceLoc(gameDir string, resourceUrl string) string {
-	encodedFilename := GetCacheFilename(filepath.Base(resourceUrl))
-	var cachedEntry = ""
-
-	found := errors.New("found") // a slightly hacky approach to short-circuit fs walk after the file is found
-	err := filepath.WalkDir(gameDir+string(filepath.Separator), func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			sanitizedName := d.Name()
-			sanitizedName = strings.TrimSuffix(sanitizedName, filepath.Ext(sanitizedName))
-			if strings.Compare(encodedFilename, sanitizedName) == 0 {
-				cachedEntry = path
-				return found
-			}
-		}
-		return nil
-	})
-	if err != nil && !errors.Is(err, found) {
-		log.Println("error while searching for cached file:", err)
-		return ""
-	}
-
-	return cachedEntry
-}
-
 func ParseResourcesBundles(unmarshalledJson any, packDir string) ([]ResourceBundle, error) {
 
-	results := GetResourcesFromUnmarshalledJson(unmarshalledJson, packDir)
+	bundleMap := make(map[string]internal.Bundle)
+
+	_ = internal.AggregateBundleRecur(unmarshalledJson, new(internal.JsonPointer), bundleMap)
+
+	var results []ResourceBundle
+	for k, bundle := range bundleMap {
+		results = append(results, ResourceBundle{
+			JsonPointer: k,
+			Guid:        normalize(bundle.Guid),
+			Name:        normalize(bundle.Name),
+			Nickname:    normalize(bundle.Nickname),
+			resources:   MapToResources(&bundle, packDir),
+		})
+	}
 
 	return results, nil
 }
 
-func GetResourcesFromUnmarshalledJson(data any, packDir string) []ResourceBundle {
-	bundleMap := make(map[string]internal.Bundle)
-
-	_ = internal.AggregateBundleRecur(data, new(internal.JsonPointer), bundleMap)
-
-	var results []ResourceBundle
-	for k, bundle := range bundleMap {
-		results = append(results, MapToResourceBundle(&bundle, k, packDir))
-	}
-	return results
-}
-
-func MapToResourceBundle(bb *internal.Bundle, jsonPath string, packDataDir string) ResourceBundle {
-	return ResourceBundle{
-		JsonPointer: jsonPath,
-		Guid:        normalize(bb.Guid),
-		Name:        normalize(bb.Name),
-		Nickname:    normalize(bb.Nickname),
-		resources:   MapToResources(bb, packDataDir),
-	}
-}
-
 func MapToResources(bb *internal.Bundle, packDataDir string) []GameResource {
 	var urls []GameResource
-	for k, v := range bb.ResUrls {
+	for pointer, url := range bb.ResUrls {
 		urls = append(urls, GameResource{
-			JsonPointer: k,
-			ResourceUrl: v,
-			Status:      deduceResourceStatus(v, packDataDir),
+			JsonPointer: pointer,
+			ResourceUrl: url,
+			Status:      deduceResourceStatus(url, packDataDir),
 		})
 	}
 	return urls
+}
+
+type SaveRevision struct {
+	original []string
+	root     string
+	revision int
+}
+
+var saveRevPattern = regexp.MustCompile("__packrev([^_]+)_?(.*)$")
+
+func (rev *SaveRevision) IsBlank() bool {
+	return len(rev.root) == 0
+}
+
+func (rev *SaveRevision) Parse(valueFromJson []string) error {
+	dollarIdx := slices.IndexFunc(valueFromJson, func(s string) bool {
+		return strings.HasPrefix(s, "__packrev")
+	})
+	if dollarIdx != -1 {
+		submatches := saveRevPattern.FindStringSubmatch(valueFromJson[dollarIdx])
+		rev.original = append(valueFromJson[:dollarIdx], valueFromJson[dollarIdx+1:]...)
+		if len(submatches) != 3 {
+			return nil
+		}
+		rev.root = submatches[1]
+		if len(submatches[2]) > 0 {
+			var err error
+			int64Decode, err := base52.Decode(submatches[2])
+			if err != nil {
+				return err
+			}
+			rev.revision = int(int64Decode)
+			return err
+		}
+
+	} else {
+		rev.original = valueFromJson
+	}
+	return nil
+}
+
+func (rev *SaveRevision) Serialize() []byte {
+	packrevStr, err := rev.String()
+	if err != nil {
+		return nil
+	}
+	allTags := append(rev.original, packrevStr)
+	marshal, err := json.Marshal(allTags)
+	if err != nil {
+		return nil
+	}
+	return []byte(fmt.Sprintf(`{"op":"replace","path":"/Tags","value":%s}`, marshal))
+}
+
+func (rev *SaveRevision) String() (string, error) {
+	if len(rev.root) == 0 {
+		return "", errors.New("invalid save revision")
+	}
+	if rev.revision == 0 {
+		return fmt.Sprintf("__packrev%s", rev.root), nil
+	}
+	encode, err := base52.Encode(int64(rev.revision))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("__packrev%s_%s", rev.root, encode), nil
+}
+
+func (rev *SaveRevision) IncrementOrGen(seed *snowflake.Node) {
+	if len(rev.root) == 0 {
+		rev.revision = 0
+		encode, err := base52.Encode(seed.Generate().Int64())
+		if err != nil {
+			panic(err)
+		}
+		rev.root = encode
+	} else {
+		rev.revision++
+	}
 }

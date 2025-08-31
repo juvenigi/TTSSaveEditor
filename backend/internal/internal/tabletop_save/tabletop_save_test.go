@@ -30,7 +30,7 @@ func TestTSSaveFile_SaveAsPackTemplate(t *testing.T) {
 			},
 		},
 	}
-	if _, err := save.GetPortableJsonBlob(nil, ""); err != nil {
+	if _, err := save.IntoPortable(nil, ""); err != nil {
 		t.Fatal(err)
 	}
 }

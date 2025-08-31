@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"maps"
@@ -216,7 +215,7 @@ func (rm *PackData) writeResource(filenames *RwFilenameSlice, destinationName st
 
 func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte, filenames *RwFilenameSlice) error {
 	escapedName := tabletop_save.GetCacheFilename(res.ResourceUrl)
-	written, failedAttempts, criticalErr := attemptToWriteExtLess(rm.packDataDir, escapedName, 0, file)
+	written, failedAttempts, criticalErr := wrapped_io.AttemptToWriteExtLess(rm.packDataDir, escapedName, 10, file)
 	if criticalErr != nil {
 		res.Status = tabletop_save.Failed
 		return criticalErr
@@ -242,43 +241,13 @@ func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte,
 	return nil
 }
 
-func attemptToWriteExtLess(dir string, name string, count int, content []byte) (string, []string, error) {
-	tries := 0
-	var previousAttempts []string
-	attemptName := name
-	previousAttempts = append(previousAttempts, attemptName)
-	for {
-		file, err := os.OpenFile(filepath.Join(dir, attemptName), os.O_WRONLY|os.O_CREATE|os.O_EXCL, os.ModePerm)
-		if err == nil {
-			_, err := io.Copy(file, bytes.NewReader(content))
-			defer file.Close()
-			if err != nil {
-				return "", previousAttempts, err
-			}
-			if err := file.Sync(); err != nil {
-				return "", previousAttempts, err
-			}
-			break
-		} else if !os.IsExist(err) {
-			return "", previousAttempts, err
-		}
-		if tries++; tries > count {
-			break
-		} else {
-			previousAttempts = append(previousAttempts, attemptName)
-			attemptName = fmt.Sprintf("%s-%d", attemptName, count+tries)
-		}
-	}
-	return attemptName, previousAttempts, nil
-}
-
 func (rm *PackData) AddRemoteCachedFile(res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
-	fpath, ok := scanner.ResourceCached[tabletop_save.GetCacheFilename(res.ResourceUrl)]
+	filePath, ok := scanner.ResourceCached[tabletop_save.GetCacheFilename(res.ResourceUrl)]
 	if !ok {
 		return errors.New("cached file not found")
 	}
 
-	file, fileChecksum := wrapped_io.GetFileAndChecksum(fpath)
+	file, fileChecksum := wrapped_io.GetFileAndChecksum(filePath)
 	if fileChecksum == nil {
 		return errors.New("cached file not found")
 	}
@@ -393,7 +362,7 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 	return rm.FlushToDisk()
 }
 
-// note: this is not thread safe
+// WriteSaveToPackData note: this is not thread safe
 func (rm *PackData) WriteSaveToPackData(originalName string, blob []byte) error {
 	trimmedName := strings.TrimSuffix(originalName, ".json")
 	candidateName := trimmedName
@@ -528,35 +497,10 @@ var bakNumPattern = regexp.MustCompile(`\d+`)
 
 func (rm *PackData) MakeBackup() error {
 	parent, dir := filepath.Split(rm.packDataDir)
-	dirEntries, err := os.ReadDir(parent)
+	backupDir, err := getBackupDirName(parent, dir)
 	if err != nil {
 		return err
 	}
-	var packs []string
-	largest := -1
-	for _, entry := range dirEntries {
-		if entry.IsDir() && strings.HasPrefix(entry.Name(), dir) {
-			packs = append(packs, entry.Name())
-			if digits := bakNumPattern.FindString(entry.Name()); len(digits) > 0 {
-				cursor, err := strconv.Atoi(digits)
-				if err != nil {
-					return err
-				}
-				if cursor > largest {
-					largest = cursor
-				}
-			}
-		}
-	}
-	var strippedDir string
-	idx := strings.Index(dir, ".")
-	if idx == -1 {
-		strippedDir = dir
-	} else {
-		strippedDir = dir[:idx]
-	}
-
-	backupDir := filepath.Join(parent, fmt.Sprintf("%s.%d", strippedDir, largest+1))
 	if err = os.Mkdir(backupDir, 0755); err != nil {
 		return err
 	}
@@ -580,6 +524,38 @@ func (rm *PackData) MakeBackup() error {
 	return nil
 }
 
+func getBackupDirName(parent string, dir string) (string, error) {
+	dirEntries, err := os.ReadDir(parent)
+	if err != nil {
+		return "", err
+	}
+	var packs []string
+	largest := -1
+	for _, entry := range dirEntries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), dir) {
+			packs = append(packs, entry.Name())
+			if digits := bakNumPattern.FindString(entry.Name()); len(digits) > 0 {
+				cursor, err := strconv.Atoi(digits)
+				if err != nil {
+					return "", err
+				}
+				if cursor > largest {
+					largest = cursor
+				}
+			}
+		}
+	}
+	var strippedDir string
+	idx := strings.Index(dir, ".")
+	if idx == -1 {
+		strippedDir = dir
+	} else {
+		strippedDir = dir[:idx]
+	}
+
+	return filepath.Join(parent, fmt.Sprintf("%s.%d", strippedDir, largest+1)), nil
+}
+
 func (rm *PackData) CachePackedResources(resList []*tabletop_save.GameResource, gameDir string) error {
 	for _, res := range resList {
 		if res.Status == tabletop_save.Packed {
@@ -590,6 +566,10 @@ func (rm *PackData) CachePackedResources(resList []*tabletop_save.GameResource, 
 	}
 
 	return nil
+}
+
+func (rm *PackData) Zip() {
+
 }
 
 func copyPackedToGameCache(res *tabletop_save.GameResource, gameDir string, packDataDir string) error {

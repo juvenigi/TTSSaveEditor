@@ -37,7 +37,7 @@ func NewCacheManagerApi() *CacheManagerApi {
 	if err != nil {
 		panic(err)
 	}
-	api.applicationProperties = applicationProperties.ToView()
+	api.applicationProperties = *applicationProperties.ToView()
 	packData, err := resource_map.InitPackDataFromFile(filepath.Join(api.applicationProperties.PackDataDir, properties.PackDataYaml))
 	if err != nil {
 		panic(err)
@@ -116,12 +116,12 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string
 	if err != nil {
 		return err
 	}
-	if err = api.packData.ImportFromSave(api.ctx, &saveData, gameDir); err != nil {
+	if err = api.packData.ImportFromSave(api.ctx, saveData, gameDir); err != nil {
 		return err
 	}
 
 	if len(saveName) > 0 {
-		modifiedJsonBlob, err := saveData.GetPortableJsonBlob(api.seed, saveName)
+		modifiedJsonBlob, err := saveData.IntoPortable(api.seed, saveName)
 		if err != nil {
 			return err
 		}
@@ -134,7 +134,7 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string
 	return nil
 }
 
-// ConstructPackedSave note : saveName != savefile name, it's what the game will show you in the save selection
+// ConstructPackedSave note : saveName != savefile name, save name is what the game will show you in the save selection
 func (api *CacheManagerApi) ConstructPackedSave(saveLocation string, saveName string) error {
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
@@ -202,4 +202,13 @@ func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup
 	}
 
 	return api.packData.MergeWith(srcLoc, makeBackup)
+}
+
+func (api *CacheManagerApi) ZipPackData() error {
+	if err := api.packData.FlushToDisk(); err != nil {
+		return err
+	}
+
+	api.packData.Zip()
+
 }

@@ -28,8 +28,8 @@ func (p *ApplicationProperties) InitFrom(v *ApplicationPropertiesView) error {
 	return p.Validate()
 }
 
-func (p *ApplicationProperties) ToView() ApplicationPropertiesView {
-	return ApplicationPropertiesView{
+func (p *ApplicationProperties) ToView() *ApplicationPropertiesView {
+	return &ApplicationPropertiesView{
 		OsPathSeparator: string(os.PathSeparator),
 		GameDir:         p.GameDir,
 		PackDataDir:     p.PackDataDir,
@@ -63,18 +63,17 @@ func (p *ApplicationProperties) Validate() error {
 	return nil
 }
 
-func SetupDefaultAppProperties() (ApplicationProperties, error) {
-	var blank ApplicationProperties
+func SetupDefaultAppProperties() (*ApplicationProperties, error) {
 	gameDir, err := internal.GetDefaultGameDir()
 	if err != nil {
-		return blank, err
+		return nil, err
 	}
 	packData, err := internal.CreateDefaultPackData()
 	if err != nil {
-		return blank, err
+		return nil, err
 	}
 
-	return ApplicationProperties{
+	return &ApplicationProperties{
 		GameDir:     gameDir,
 		PackDataDir: packData,
 	}, nil
