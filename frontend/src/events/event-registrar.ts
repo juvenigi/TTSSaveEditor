@@ -1,8 +1,9 @@
 import {type GameSaveFile, GameSaveFileSchema, useSaveTableStore} from "@/store/save-collection.ts";
 import {EventsOn} from "../../wailsjs/runtime";
-import {NewFileEvent} from "@/events/event-names.ts";
+import {NewFileEvent, WailsPanicEvent} from "@/events/event-names.ts";
 import {GetProperties, GetTabletopSaves} from "../../wailsjs/go/internal/CacheManagerApi";
 import {properties} from "../../wailsjs/go/models.ts";
+import {toast} from "sonner";
 import ApplicationPropertiesView = properties.ApplicationPropertiesView;
 
 let osSeparator = "/";
@@ -13,6 +14,12 @@ export function getOsPathSeparator() {
   return osSeparator;
 }
 
+async function setupProperties() {
+  const properties = await GetProperties();
+  osSeparator = properties.OsPathSeparator;
+  useSaveTableStore.getState().rootSaveDir = `${properties.GameDir}${osSeparator}Saves`;
+  return properties;
+}
 
 export async function ensureWailsInitialized() {
   if (alreadyRegistered) {
@@ -20,10 +27,7 @@ export async function ensureWailsInitialized() {
   } else {
     alreadyRegistered = true;
   }
-
-  const properties = await GetProperties();
-  osSeparator = properties.OsPathSeparator;
-  useSaveTableStore.getState().rootSaveDir = `${properties.GameDir}${osSeparator}Saves`;
+  const properties = await setupProperties();
   setupListeners(properties);
 
   await GetTabletopSaves(properties.GameDir + osSeparator + 'Saves');
@@ -46,5 +50,31 @@ function setupListeners(properties: ApplicationPropertiesView) {
       console.error("todo: you did not setup toasts!")
     }
   });
+
+  EventsOn(WailsPanicEvent, (error: unknown) => {
+    console.error("Wails backend panic caught:", error);
+    // If the error object contains structured fields, you can inspect them:
+
+    if (isWailsPanicPayload(error)) {
+      toast(`A backend panic occurred:\n\n${error.message}`);
+    } else {
+      toast("A backend panic occurred. Check console for details.");
+    }
+  });
+}
+
+interface WailsPanicPayload {
+  message?: string;
+  stack?: string;
+
+  [key: string]: unknown;
+}
+
+function isWailsPanicPayload(value: unknown): value is WailsPanicPayload {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "message" in value
+  );
 }
 

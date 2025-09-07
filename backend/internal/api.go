@@ -58,6 +58,8 @@ func (api *CacheManagerApi) Startup(ctx context.Context) {
 }
 
 func (api *CacheManagerApi) SetProperties(view properties.ApplicationPropertiesView) error {
+	defer noPanicBeHappy(api.ctx)
+
 	var props properties.ApplicationProperties
 
 	if err := props.InitFrom(&view); err != nil {
@@ -75,10 +77,14 @@ func (api *CacheManagerApi) SetProperties(view properties.ApplicationPropertiesV
 }
 
 func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView {
+	defer noPanicBeHappy(api.ctx)
+
 	return api.applicationProperties
 }
 
 func (api *CacheManagerApi) GetTabletopSaves(scanDir string) error {
+	defer noPanicBeHappy(api.ctx)
+
 	pp := api.applicationProperties
 	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(scanDir, pp.PackDataDir)
 	if err != nil {
@@ -103,6 +109,8 @@ func (api *CacheManagerApi) GetTabletopSaves(scanDir string) error {
 }
 
 func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string) error {
+	defer noPanicBeHappy(api.ctx)
+
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -136,6 +144,8 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string
 
 // CreateSingleplayerSave note : saveName != savefile name, save name is what the game will show you in the save selection
 func (api *CacheManagerApi) CreateSingleplayerSave(saveLocation string, saveName string) error {
+	defer noPanicBeHappy(api.ctx)
+
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -157,6 +167,8 @@ func (api *CacheManagerApi) CreateSingleplayerSave(saveLocation string, saveName
 }
 
 func (api *CacheManagerApi) ConstructPackCachedSave(saveLocation string, saveName string) error {
+	defer noPanicBeHappy(api.ctx)
+
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -178,10 +190,14 @@ func (api *CacheManagerApi) ConstructPackCachedSave(saveLocation string, saveNam
 }
 
 func (api *CacheManagerApi) Delete(fileLocation string) error {
+	defer noPanicBeHappy(api.ctx)
+
 	return os.Remove(fileLocation)
 }
 
 func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup bool) error {
+	defer noPanicBeHappy(api.ctx)
+
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
@@ -202,4 +218,17 @@ func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup
 	}
 
 	return api.packData.MergeWith(srcLoc, makeBackup)
+}
+
+func (api *CacheManagerApi) PanicButton() error {
+	defer noPanicBeHappy(api.ctx)
+
+	panic("test panic")
+	return nil
+}
+
+func noPanicBeHappy(ctx context.Context) {
+	if err := recover(); err != nil {
+		runtime.EventsEmit(ctx, "runtime:error", err)
+	}
 }

@@ -3,6 +3,8 @@ import {saveFileTableCols} from "@/pages/save-file-columns.tsx";
 import {SaveFileTable} from "@/pages/save-file-table.tsx";
 import PackDataSidebar from "@/pages/pack-data-sidebar.tsx";
 import SaveMigrationDialog from "@/pages/save-migration-dialog.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {PanicButton} from "../../wailsjs/go/internal/CacheManagerApi";
 
 
 export default function SaveFilePage() {
@@ -14,6 +16,7 @@ export default function SaveFilePage() {
   return (
     <>
       <h1>Save Files</h1>
+      <Button onMouseDown={PanicButton}>Panic Button</Button>
       <PackDataSidebar></PackDataSidebar>
       <SaveMigrationDialog></SaveMigrationDialog>
       {folderNavigator(retToParent, activeDir, subdirs, setActiveDir)}
