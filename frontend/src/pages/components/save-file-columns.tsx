@@ -16,6 +16,7 @@ export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
       const finalFilename = `${isLongFilename ? "..." + file.filename.substring(file.filename.length - 30) : file.filename}`;
 
       // todo: the hoverCard->Card is a hack
+      // todo: need to handle click event differently (depending on packdata vs non-packdata)
       return (
         <HoverCard>
           {file.savename.length === 0

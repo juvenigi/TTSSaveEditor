@@ -1,38 +1,15 @@
-import {Button} from "@/components/ui/button.tsx";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger
-} from "@/components/ui/drawer.tsx";
-import {saveFileTableCols} from "@/pages/save-file-columns.tsx";
-import {SaveFileTable} from "@/pages/save-file-table.tsx";
+import {saveFileTableCols} from "@/pages/components/save-file-columns.tsx";
+import {SaveFileTable} from "@/pages/components/save-file-table.tsx";
 import {useSaveTableStore} from "@/store/save-collection.ts";
 
 export default function PackDataSidebar() {
-
   const data = useSaveTableStore(state => state.packDataSavefiles)
+  const packDataDir = useSaveTableStore(state => state.packDataDir)
 
   return (
-    <Drawer>
-      <DrawerTrigger>Open PackData</DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Pack Data</DrawerTitle>
-          <DrawerDescription>ooh yeah</DrawerDescription>
-        </DrawerHeader>
-        <SaveFileTable columns={saveFileTableCols} data={data}/>
-        <DrawerFooter>
-          <Button>Submit</Button>
-          <DrawerClose>
-            Cancel
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+    <div className="container mx-auto py-10">
+      <h1>Pack Data Location: {packDataDir}</h1>
+      <SaveFileTable columns={saveFileTableCols} data={data}/>
+    </div>
   )
 }

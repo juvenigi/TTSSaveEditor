@@ -1,7 +1,7 @@
 import {type ColumnDef, flexRender, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table.tsx";
 import {clsx} from "clsx";
-import {getColumnMetaClass} from "@/pages/save-file-columns.tsx";
+import {getColumnMetaClass} from "@/pages/components/save-file-columns.tsx";
 import {useMigrationDialogStore} from "@/store/migration-dialog.ts";
 import {useSaveTableStore} from "@/store/save-collection.ts";
 import {getOsPathSeparator} from "@/events/event-registrar.ts";

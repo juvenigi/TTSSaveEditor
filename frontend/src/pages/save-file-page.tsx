@@ -1,8 +1,7 @@
 import {useSaveTableStore} from "@/store/save-collection.ts";
-import {saveFileTableCols} from "@/pages/save-file-columns.tsx";
-import {SaveFileTable} from "@/pages/save-file-table.tsx";
-import PackDataSidebar from "@/pages/pack-data-sidebar.tsx";
-import SaveMigrationDialog from "@/pages/save-migration-dialog.tsx";
+import {saveFileTableCols} from "@/pages/components/save-file-columns.tsx";
+import {SaveFileTable} from "@/pages/components/save-file-table.tsx";
+import SaveMigrationDialog from "@/pages/components/save-migration-dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {PanicButton} from "../../wailsjs/go/internal/CacheManagerApi";
 
@@ -10,19 +9,17 @@ import {PanicButton} from "../../wailsjs/go/internal/CacheManagerApi";
 export default function SaveFilePage() {
   const data = useSaveTableStore(store => store.activeSavefiles);
   const activeDir = useSaveTableStore(store => store.activeDir);
-  const subdirs = useSaveTableStore(store => store.childSegments);
+  const subDirs = useSaveTableStore(store => store.childSegments);
   const setActiveDir = useSaveTableStore(store => store.setActiveSegment);
   const retToParent = useSaveTableStore(store => store.retToParent);
   return (
     <>
-      <h1>Save Files</h1>
-      <Button onMouseDown={PanicButton}>Panic Button</Button>
-      <PackDataSidebar></PackDataSidebar>
-      <SaveMigrationDialog></SaveMigrationDialog>
-      {folderNavigator(retToParent, activeDir, subdirs, setActiveDir)}
       <div className="container mx-auto py-10">
+        {folderNavigator(retToParent, activeDir, subDirs, setActiveDir)}
         <SaveFileTable columns={saveFileTableCols} data={data}/>
       </div>
+      <Button onMouseDown={PanicButton}>Panic Button</Button>
+      <SaveMigrationDialog></SaveMigrationDialog>
     </>
   )
 }

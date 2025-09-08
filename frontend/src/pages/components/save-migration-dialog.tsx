@@ -1,8 +1,8 @@
-import {Button} from "@/components/ui/button";
+import {Button} from "@/components/ui/button.tsx";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog.tsx";
 import {useMigrationDialogStore} from "@/store/migration-dialog.ts";
 import {useState} from "react";
-import {GetProperties, GetTabletopSaves, WriteToPackData} from "../../wailsjs/go/internal/CacheManagerApi";
+import {GetProperties, GetTabletopSaves, WriteToPackData} from "../../../wailsjs/go/internal/CacheManagerApi";
 import {Input} from "@/components/ui/input.tsx";
 import {useSaveTableStore} from "@/store/save-collection.ts";
 

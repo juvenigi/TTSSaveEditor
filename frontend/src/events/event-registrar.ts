@@ -17,6 +17,7 @@ export function getOsPathSeparator() {
 async function setupProperties() {
   const properties = await GetProperties();
   osSeparator = properties.OsPathSeparator;
+  useSaveTableStore.getState().setPackDataDir(properties.PackDataDir.replaceAll(properties.OsPathSeparator, "/"));
   useSaveTableStore.getState().rootSaveDir = `${properties.GameDir}${osSeparator}Saves`;
   return properties;
 }

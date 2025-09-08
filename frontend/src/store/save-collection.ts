@@ -25,6 +25,7 @@ export type NewFileType = "packdata-file" | "game-savefile"
 
 export type FileListState = {
   rootSaveDir: string
+  packDataDir: string
   activeDir: string[]
   childSegments: string[]
   allSavefiles: GameSaveFile[]
@@ -35,6 +36,7 @@ export type FileListState = {
 }
 
 export type FileListActions = {
+  setPackDataDir: (path: string) => void,
   addFile: (file: GameSaveFile) => void
   addPackDataFile: (file: GameSaveFile) => void
   setActiveSegment: (segment: string | "..") => void
@@ -48,16 +50,19 @@ type FileListStore = FileListState & FileListActions
 export const useSaveTableStore = create<FileListStore>((set) => ({
   loading: "done",
   rootSaveDir: "",
+  packDataDir: "",
   activeDir: [],
   childSegments: [],
   allSavefiles: [],
   activeSavefiles: [],
   packDataSavefiles: [],
-
+  setPackDataDir: (path: string) => {
+    set({packDataDir: path});
+  },
   retToParent: (times: number) => {
     set((state) => ({
       activeDir: state.activeDir.slice(0, Math.max(0, state.activeDir.length - times)),
-    }))
+    }));
     set(updateChildSegments);
     set(updateActiveSavefiles);
   },
