@@ -3,6 +3,7 @@ package internal
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -53,4 +54,21 @@ func TestCacheManagerApi_MergePackDataWithAnother(t *testing.T) {
 	if err := api.MergePackDataWithAnother(otherLoc, true); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// todo: write a proper test
+func TestCacheManagerApi_OpenInFileExploererWithCache(t *testing.T) {
+	exe := "C:\\Users\\joghourt\\Documents\\My games\\Tabletop Simulator\\Saves\\"
+	fromSlash := filepath.FromSlash(strings.ReplaceAll(filepath.Dir(exe), string(filepath.Separator), "/"))
+	t.Log(fromSlash)
+	t.Log(filepath.ToSlash(fromSlash))
+
+	dir, _ := filepath.Split(exe)
+
+	dirDir, file := filepath.Split(dir)
+
+	t.Log("dir:", dir)
+	t.Log("dirDir:", dirDir)
+	t.Log("file:", len(file))
+
 }

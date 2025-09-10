@@ -113,6 +113,8 @@
         - import / unpack
 - [/] React frontend
     - [X] TanStack Router
+    - [ ] Make sure Singleton locks are tolerated
+    - [ ] Provide some clue about progress when packing game savefile
     - [ ] Add creation / modification date to disambiguate saves 
     - [ ] Service / Command Layer
     - [ ] Store / Reducer

@@ -14,6 +14,8 @@ export function GetTabletopSaves(arg1:string):Promise<void>;
 
 export function MergePackDataWithAnother(arg1:string,arg2:boolean):Promise<void>;
 
+export function OpenInExplorer(arg1:string):Promise<void>;
+
 export function PanicButton():Promise<void>;
 
 export function SetProperties(arg1:properties.ApplicationPropertiesView):Promise<void>;

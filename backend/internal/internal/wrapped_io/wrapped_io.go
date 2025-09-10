@@ -8,7 +8,9 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 func CopyFile(src string, dest string) error {
@@ -74,4 +76,31 @@ func AttemptToWriteExtLess(dir string, name string, tryCount int, content []byte
 		}
 	}
 	return attemptName, previousAttempts, nil
+}
+
+func OpenInFileExplorer(dir string, file string) (*exec.Cmd, error) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		if len(file) == 0 {
+			cmd = exec.Command("explorer", dir)
+		} else {
+			cmd = exec.Command("explorer", fmt.Sprintf("/select,%s", filepath.Join(dir, file)))
+		}
+	case "darwin":
+		if len(file) == 0 {
+			cmd = exec.Command("open", filepath.Join(dir, file))
+		} else {
+			cmd = exec.Command("open", "-R", filepath.Join(dir, file))
+		}
+	default:
+		cmd = exec.Command("xdg-open", dir)
+	}
+	err := cmd.Start()
+
+	if err != nil {
+		return nil, err
+	} else {
+		return cmd, nil
+	}
 }

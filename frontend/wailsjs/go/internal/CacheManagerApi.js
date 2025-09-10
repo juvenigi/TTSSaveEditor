@@ -26,6 +26,10 @@ export function MergePackDataWithAnother(arg1, arg2) {
   return window['go']['internal']['CacheManagerApi']['MergePackDataWithAnother'](arg1, arg2);
 }
 
+export function OpenInExplorer(arg1) {
+  return window['go']['internal']['CacheManagerApi']['OpenInExplorer'](arg1);
+}
+
 export function PanicButton() {
   return window['go']['internal']['CacheManagerApi']['PanicButton']();
 }

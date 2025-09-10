@@ -220,6 +220,13 @@ func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup
 	return api.packData.MergeWith(srcLoc, makeBackup)
 }
 
+func (api *CacheManagerApi) OpenInExplorer(filepathSlash string) error {
+	if cmd, err := wrapped_io.OpenInFileExplorer(strings.TrimSuffix(filepath.FromSlash(filepathSlash), string(filepath.Separator)), ""); err != nil {
+		return err
+	} else {
+		return cmd.Wait()
+	}
+}
 func (api *CacheManagerApi) PanicButton() error {
 	defer noPanicBeHappy(api.ctx)
 

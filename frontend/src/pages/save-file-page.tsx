@@ -4,6 +4,8 @@ import {SaveFileTable} from "@/pages/components/save-file-table.tsx";
 import SaveMigrationDialog from "@/pages/components/save-migration-dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {PanicButton} from "../../wailsjs/go/internal/CacheManagerApi";
+import OpenInExplorerBtn from "@/pages/components/open-in-explorer-btn.tsx";
+import {getOsPathSeparator} from "@/events/event-registrar.ts";
 
 
 export default function SaveFilePage() {
@@ -12,10 +14,11 @@ export default function SaveFilePage() {
   const subDirs = useSaveTableStore(store => store.childSegments);
   const setActiveDir = useSaveTableStore(store => store.setActiveSegment);
   const retToParent = useSaveTableStore(store => store.retToParent);
+  const saveDir = useSaveTableStore(store => store.rootSaveDir)
   return (
     <>
       <div className="container mx-auto py-10">
-        {folderNavigator(retToParent, activeDir, subDirs, setActiveDir)}
+        {folderNavigator(retToParent, saveDir, activeDir, subDirs, setActiveDir)}
         <SaveFileTable columns={saveFileTableCols} data={data}/>
       </div>
       <Button onMouseDown={PanicButton}>Panic Button</Button>
@@ -24,7 +27,7 @@ export default function SaveFilePage() {
   )
 }
 
-function folderNavigator(retToParent: (times: number) => void, activeDir: string[], subdirs: string[], setActiveDir: (segment: (string | "..")) => void) {
+function folderNavigator(retToParent: (times: number) => void, rootSaveDir: string, activeDir: string[], subdirs: string[], setActiveDir: (segment: (string | "..")) => void) {
   return <div className="flex items-center gap-2 mb-6">
     directory:
     <div
@@ -53,5 +56,6 @@ function folderNavigator(retToParent: (times: number) => void, activeDir: string
     {subdirs.length === 0 && <div
       className="px-3 py-1 bg-muted text-muted-foreground rounded-md border border-input text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors">
       <i>no further subfolders</i></div>}
+    <OpenInExplorerBtn path={rootSaveDir + "/" + activeDir.join(getOsPathSeparator())}>Open in Files</OpenInExplorerBtn>
   </div>;
 }
