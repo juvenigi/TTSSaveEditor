@@ -1,8 +1,7 @@
 import type {ColumnDef} from "@tanstack/react-table";
 import type {GameSaveFile} from "@/store/save-collection.ts";
-import {HoverCard, HoverCardTrigger} from "@/components/ui/hover-card.tsx";
-import {HoverCardContent} from "@radix-ui/react-hover-card";
-import {Card, CardContent} from "@/components/ui/card.tsx";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card.tsx";
+
 
 export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
   {
@@ -22,15 +21,9 @@ export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
           {file.savename.length === 0
             ? <HoverCardTrigger><i>{finalFilename}</i>{` (${file.objectCount} ${object})`}</HoverCardTrigger>
             : <HoverCardTrigger>{`${file.savename} (${file.objectCount} ${object})`}</HoverCardTrigger>}
-
-          <HoverCardContent>
-            <Card>
-              <CardContent style={{textAlign: "left"}}>
-                {file.savename.length === 0 ? <i>save name is blank</i> : <p>save name: <b>{file.savename}</b></p>}
-                <p>file name: <b>{finalFilename}</b></p>
-              </CardContent>
-            </Card>
-
+          <HoverCardContent className="text-left">
+            {file.savename.length === 0 ? <i>save name is blank</i> : <p>save name: <b>{file.savename}</b></p>}
+            <p>file name: <b>{finalFilename}</b></p>
           </HoverCardContent>
         </HoverCard>
       );

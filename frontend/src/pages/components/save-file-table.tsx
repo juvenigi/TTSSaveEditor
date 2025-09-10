@@ -5,6 +5,9 @@ import {getColumnMetaClass} from "@/pages/components/save-file-columns.tsx";
 import {useMigrationDialogStore} from "@/store/migration-dialog.ts";
 import {useSaveTableStore} from "@/store/save-collection.ts";
 import {getOsPathSeparator} from "@/events/event-registrar.ts";
+import * as React from "react";
+import {MouseButton} from "@/lib/utils.ts";
+import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} from "@/components/ui/context-menu.tsx";
 
 
 interface DataTableProps<TData, TValue> {
@@ -36,8 +39,19 @@ export function SaveFileTable<TData, TValue>({
       return
     }
     const save = packData ? packDataFiles[idx] : saveFiles[idx];
-    const saveLoc = save.directory + getOsPathSeparator() + save.filename
-    selectFile(saveLoc, "PACK_DATA")
+    return save.directory + getOsPathSeparator() + save.filename
+  }
+
+  const handleOnMouseDown = (ev: React.MouseEvent<HTMLTableRowElement>, rowId: string) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    const saveLoc = selectById(rowId);
+    if (!saveLoc) {
+      return;
+    }
+    if (ev.button === MouseButton.Left) {
+      selectFile(saveLoc, "PACK_DATA")
+    }
   }
 
   return (
@@ -68,14 +82,24 @@ export function SaveFileTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                onMouseDown={() => selectById(row.id)}
+                onMouseDown={(ev: React.MouseEvent<HTMLTableRowElement>) => handleOnMouseDown(ev, row.id)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className={getColumnMetaClass(cell.column)}>
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    <ContextMenu>
+                      <ContextMenuTrigger>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem>
+                          Delete...
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+
+                    </ContextMenu>
                   </TableCell>
                 ))}
               </TableRow>
