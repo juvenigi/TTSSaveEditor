@@ -3,6 +3,7 @@ import type {GameSaveFile} from "@/store/save-collection.ts";
 import {HoverCard, HoverCardTrigger} from "@/components/ui/hover-card.tsx";
 import {HoverCardContent} from "@radix-ui/react-hover-card";
 import {Card, CardContent} from "@/components/ui/card.tsx";
+import {getOsPathSeparator} from "@/events/event-registrar.ts";
 
 export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
   {
@@ -26,8 +27,7 @@ export const saveFileTableCols: ColumnDef<GameSaveFile>[] = [
           <HoverCardContent>
             <Card>
               <CardContent style={{textAlign: "left"}}>
-                {file.savename.length === 0 ? <i>save name is blank</i> : <p>save name: <b>{file.savename}</b></p>}
-                <p>file name: <b>{finalFilename}</b></p>
+                <p><b>{file.directory + getOsPathSeparator() + file.filename}</b></p>
               </CardContent>
             </Card>
 

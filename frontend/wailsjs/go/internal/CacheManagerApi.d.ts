@@ -18,6 +18,8 @@ export function OpenInExplorer(arg1:string):Promise<void>;
 
 export function PanicButton():Promise<void>;
 
+export function Relocate(arg1:Array<string>,arg2:string):Promise<void>;
+
 export function SetProperties(arg1:properties.ApplicationPropertiesView):Promise<void>;
 
 export function WriteToPackData(arg1:string,arg2:string):Promise<void>;

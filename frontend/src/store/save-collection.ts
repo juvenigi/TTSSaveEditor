@@ -43,6 +43,7 @@ export type FileListActions = {
   setChildSegments: () => void
   retToParent: (times: number) => void
   clearPackDataFiles: () => void
+  clearSaveFilesList: () => void
 }
 
 type FileListStore = FileListState & FileListActions
@@ -111,6 +112,14 @@ export const useSaveTableStore = create<FileListStore>((set) => ({
       });
     })
   },
+  clearSaveFilesList: () => {
+    set(() => {
+      return ({
+        allSavefiles: [],
+        activeSavefiles: [],
+      })
+    })
+  }
 }))
 
 function updateChildSegments(state: FileListStore) {

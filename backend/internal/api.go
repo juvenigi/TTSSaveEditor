@@ -190,7 +190,6 @@ func (api *CacheManagerApi) ConstructPackCachedSave(saveLocation string, saveNam
 }
 
 func (api *CacheManagerApi) Delete(fileLocation string) error {
-	defer noPanicBeHappy(api.ctx)
 
 	return os.Remove(fileLocation)
 }
@@ -218,6 +217,29 @@ func (api *CacheManagerApi) MergePackDataWithAnother(otherLoc string, makeBackup
 	}
 
 	return api.packData.MergeWith(srcLoc, makeBackup)
+}
+
+func (api *CacheManagerApi) Relocate(locations []string, target string) error {
+	normalizedFilepath := make([]string, len(locations))
+	for i := range locations {
+		normalizedFilepath[i] = filepath.FromSlash(locations[i])
+	}
+	var err error
+	for _, fileLocation := range normalizedFilepath {
+		base := filepath.Base(fileLocation)
+		err = wrapped_io.CopyFile(fileLocation, filepath.Join(target, base))
+		if err != nil {
+			return err
+		}
+	}
+	for _, fileLocation := range normalizedFilepath {
+		err = os.Remove(fileLocation)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (api *CacheManagerApi) OpenInExplorer(filepathSlash string) error {

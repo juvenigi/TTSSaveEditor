@@ -3,7 +3,7 @@ import {saveFileTableCols} from "@/pages/components/save-file-columns.tsx";
 import {SaveFileTable} from "@/pages/components/save-file-table.tsx";
 import SaveMigrationDialog from "@/pages/components/save-migration-dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {PanicButton} from "../../wailsjs/go/internal/CacheManagerApi";
+import {GetTabletopSaves} from "../../wailsjs/go/internal/CacheManagerApi";
 import OpenInExplorerBtn from "@/pages/components/open-in-explorer-btn.tsx";
 import {getOsPathSeparator} from "@/events/event-registrar.ts";
 
@@ -21,7 +21,6 @@ export default function SaveFilePage() {
         {folderNavigator(retToParent, saveDir, activeDir, subDirs, setActiveDir)}
         <SaveFileTable columns={saveFileTableCols} data={data}/>
       </div>
-      <Button onMouseDown={PanicButton}>Panic Button</Button>
       <SaveMigrationDialog></SaveMigrationDialog>
     </>
   )
@@ -29,7 +28,10 @@ export default function SaveFilePage() {
 
 function folderNavigator(retToParent: (times: number) => void, rootSaveDir: string, activeDir: string[], subdirs: string[], setActiveDir: (segment: (string | "..")) => void) {
   return <div className="flex items-center gap-2 mb-6">
-    directory:
+    <OpenInExplorerBtn path={rootSaveDir + "/" + activeDir.join(getOsPathSeparator())}>
+      Open Directory
+    </OpenInExplorerBtn>
+    <RefreshFilesBtn path={rootSaveDir}>Refresh</RefreshFilesBtn>
     <div
       onMouseDown={() => retToParent(activeDir.length)}
       className="px-3 py-1 bg-muted text-muted-foreground rounded-md border border-input text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -56,6 +58,27 @@ function folderNavigator(retToParent: (times: number) => void, rootSaveDir: stri
     {subdirs.length === 0 && <div
       className="px-3 py-1 bg-muted text-muted-foreground rounded-md border border-input text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors">
       <i>no further subfolders</i></div>}
-    <OpenInExplorerBtn path={rootSaveDir + "/" + activeDir.join(getOsPathSeparator())}>Open in Files</OpenInExplorerBtn>
   </div>;
+}
+
+interface RefreshFilesBtnProps {
+  path: string;
+  children?: React.ReactNode
+}
+
+function RefreshFilesBtn({path, children}: RefreshFilesBtnProps) {
+  const clear = useSaveTableStore(state => state.clearSaveFilesList)
+  const update = useSaveTableStore(state => state.setChildSegments)
+  const press = async () => {
+    clear()
+    try {
+      await GetTabletopSaves(path)
+    } finally {
+      update()
+    }
+  }
+
+  return (
+    <Button onMouseDown={press}>{children}</Button>
+  )
 }
