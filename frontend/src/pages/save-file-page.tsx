@@ -1,11 +1,12 @@
 import {useSaveTableStore} from "@/store/save-collection.ts";
 import {saveFileTableCols} from "@/pages/components/save-file-columns.tsx";
 import {SaveFileTable} from "@/pages/components/save-file-table.tsx";
-import SaveMigrationDialog from "@/pages/components/save-migration-dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {GetTabletopSaves} from "../../wailsjs/go/internal/CacheManagerApi";
 import OpenInExplorerBtn from "@/pages/components/open-in-explorer-btn.tsx";
 import {getOsPathSeparator} from "@/events/event-registrar.ts";
+import SaveMigrationDialog from "@/pages/components/save-migration-dialog.tsx";
+import * as React from "react";
 
 
 export default function SaveFilePage() {
@@ -19,9 +20,9 @@ export default function SaveFilePage() {
     <>
       <div className="container mx-auto py-10">
         {folderNavigator(retToParent, saveDir, activeDir, subDirs, setActiveDir)}
-        <SaveFileTable columns={saveFileTableCols} data={data}/>
+        <SaveFileTable columns={saveFileTableCols} data={data} migrationTo={"PACK_DATA"}/>
+        <SaveMigrationDialog/>
       </div>
-      <SaveMigrationDialog></SaveMigrationDialog>
     </>
   )
 }
