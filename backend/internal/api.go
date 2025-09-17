@@ -124,8 +124,16 @@ func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string
 	if err != nil {
 		return err
 	}
-	if err = api.packData.ImportFromSave(api.ctx, saveData, gameDir); err != nil {
-		return err
+
+	var errCh = api.packData.ImportFromSave(api.ctx, saveData, gameDir)
+	select {
+	case errFc, done := <-errCh:
+		if done {
+			break
+		} else if errFc != nil {
+			return errFc
+		}
+	case <-api.ctx.Done():
 	}
 
 	if len(saveName) > 0 {

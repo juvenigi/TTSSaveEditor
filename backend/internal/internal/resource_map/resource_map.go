@@ -122,13 +122,12 @@ func (rm *PackData) FlushToDisk() error {
 // filename, count, extension(may be empty)
 var duplicateFilenamePattern = regexp.MustCompile("(.*)-(\\d+)(\\.?.*)$")
 
-// SynchronisedFilenameSet exists to avoid repeatedly calling os.ReadDir every time we add a new file to PackData.
-type SynchronisedFilenameSet struct {
-	mu      *sync.RWMutex
+// FilenameSet exists to avoid repeatedly calling os.ReadDir every time we add a new file to PackData.
+type FilenameSet struct {
 	entries map[string]struct{}
 }
 
-func NewSynchronisedFilenameSet(packDataDir string) (*SynchronisedFilenameSet, error) {
+func NewSynchronisedFilenameSet(packDataDir string) (*FilenameSet, error) {
 	fileEntries, err := os.ReadDir(packDataDir)
 	if err != nil {
 		return nil, err
@@ -141,8 +140,7 @@ func NewSynchronisedFilenameSet(packDataDir string) (*SynchronisedFilenameSet, e
 		filenames[file.Name()] = struct{}{}
 	}
 
-	return &SynchronisedFilenameSet{
-		mu:      new(sync.RWMutex),
+	return &FilenameSet{
 		entries: filenames,
 	}, nil
 }
@@ -196,8 +194,9 @@ func (rm *PackData) AddRemoteFile(ctx context.Context, res *tabletop_save.GameRe
 	return nil, &ApplicationFile{urlRes.Data, escapedName, res}
 }
 
-func (rm *PackData) writeResource(filenames *SynchronisedFilenameSet, destinationName string, blob []byte, res *tabletop_save.GameResource) (error, *ApplicationFile) {
-	filenames.mu.RLock()
+func (rm *PackData) writeResource(filenames *FilenameSet, unwritten *ApplicationFile) error {
+	var destinationName = unwritten.filepath
+
 	attempt := 0
 	attemptedName := fmt.Sprintf("%s-%d", destinationName, attempt)
 	// try without attempt counter first, then iterate over attempts
@@ -205,14 +204,14 @@ func (rm *PackData) writeResource(filenames *SynchronisedFilenameSet, destinatio
 		for {
 			// loop until a unique filename is found
 			if _, present = filenames.entries[attemptedName]; !present {
+				unwritten.filepath = attemptedName
 				break
 			}
 			attempt++
 		}
 	}
-	filenames.mu.RUnlock()
 
-	return nil, &ApplicationFile{blob, attemptedName, res}
+	return nil
 }
 
 type ApplicationFile struct {
@@ -221,19 +220,18 @@ type ApplicationFile struct {
 	res      *tabletop_save.GameResource
 }
 
-func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte, filenames *SynchronisedFilenameSet) error {
+func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte, filenames *FilenameSet) error {
 	escapedName := tabletop_save.GetCacheFilename(res.ResourceUrl)
 	written, failedAttempts, criticalErr := wrapped_io.AttemptToWriteExtLess(rm.packDataDir, escapedName, 10, file)
 	if criticalErr != nil {
 		res.Status = tabletop_save.Failed
 		return criticalErr
 	}
-	filenames.mu.Lock()
+
 	filenames.entries[written] = struct{}{}
 	for _, fAttempt := range failedAttempts {
 		filenames.entries[fAttempt] = struct{}{}
 	}
-	filenames.mu.Unlock()
 
 	new256 := sha3.New256()
 	if _, criticalErr = new256.Write(file); criticalErr != nil {
@@ -313,7 +311,7 @@ func cleanupMap(mappedUrlExists map[string]presentKey, target *map[string]string
 	return deletedOnce
 }
 
-func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *SynchronisedFilenameSet) map[string]presentKey {
+func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *FilenameSet) map[string]presentKey {
 	var mappedFileExists = make(map[string]presentKey)
 	for url, file := range urlToFileMap {
 		if _, ok := filenames.entries[file]; ok {
@@ -359,12 +357,12 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 			return
 		case file, done := <-fileChan:
 			if !done {
-				errw, written := rm.writeResource(filenames, file.filepath, file.blob, file.res)
+				errw := rm.writeResource(filenames, file)
 				if errw != nil {
 					errChan <- err
 					return
 				}
-				if err := rm.flushAndUpdate(written.res, written.blob, filenames); err != nil {
+				if err := rm.flushAndUpdate(file.res, file.blob, filenames); err != nil {
 					errChan <- err
 					return
 				}
@@ -384,7 +382,6 @@ func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSa
 			}
 			seen[resourceRef.ResourceUrl] = struct{}{}
 
-			// todo: the only async speedup is doing the initial check, the filename write is best done sync.
 			var errSw error
 			var file *ApplicationFile
 			switch resourceRef.Status {
