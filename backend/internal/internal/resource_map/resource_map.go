@@ -122,13 +122,13 @@ func (rm *PackData) FlushToDisk() error {
 // filename, count, extension(may be empty)
 var duplicateFilenamePattern = regexp.MustCompile("(.*)-(\\d+)(\\.?.*)$")
 
-// RwFilenameSlice exists to avoid repeatedly calling os.ReadDir every time we add a new file to PackData.
-type RwFilenameSlice struct {
+// SynchronisedFilenameSet exists to avoid repeatedly calling os.ReadDir every time we add a new file to PackData.
+type SynchronisedFilenameSet struct {
 	mu      *sync.RWMutex
 	entries map[string]struct{}
 }
 
-func NewRwFilenameSlice(packDataDir string) (*RwFilenameSlice, error) {
+func NewSynchronisedFilenameSet(packDataDir string) (*SynchronisedFilenameSet, error) {
 	fileEntries, err := os.ReadDir(packDataDir)
 	if err != nil {
 		return nil, err
@@ -141,58 +141,62 @@ func NewRwFilenameSlice(packDataDir string) (*RwFilenameSlice, error) {
 		filenames[file.Name()] = struct{}{}
 	}
 
-	return &RwFilenameSlice{
+	return &SynchronisedFilenameSet{
 		mu:      new(sync.RWMutex),
 		entries: filenames,
 	}, nil
 }
 
-func (rm *PackData) AddLocalFile(res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
+func (rm *PackData) AddLocalFile(res *tabletop_save.GameResource) (error, *ApplicationFile) {
 	var location = strings.TrimPrefix(res.ResourceUrl, "file:///")
 	blob, sum := wrapped_io.GetFileAndChecksum(location)
 	if sum == nil {
-		return errors.New("file not found")
+		return errors.New("file not found"), nil
 	}
 
 	packDataFile, exists := rm.sha3Archive[hex.EncodeToString(sum)]
 	if exists {
 		res.ResourceUrl = "pack:///" + packDataFile
 		res.Status = tabletop_save.Packed
-		return nil
+		return nil, nil
 	}
 
 	var destFilename = tabletop_save.GetCacheFilename(filepath.Base(res.ResourceUrl))
-	return rm.writeResource(filenames, destFilename, blob, res)
+	return nil, &ApplicationFile{
+		blob:     blob,
+		filepath: destFilename,
+		res:      res,
+	}
 }
 
-func (rm *PackData) AddRemoteFile(ctx context.Context, res *tabletop_save.GameResource, filenames *RwFilenameSlice) error {
+func (rm *PackData) AddRemoteFile(ctx context.Context, res *tabletop_save.GameResource) (error, *ApplicationFile) {
 	urlRes, err := httpfetcher.GetResourceAsync(ctx, res.ResourceUrl)
 	if err != nil {
 		res.Status = tabletop_save.Failed
-		return err
+		return err, nil
 	}
 
 	packFileName, ok := rm.sha3Archive[hex.EncodeToString(urlRes.Checksum)]
 	if ok {
 		if file, err := os.ReadFile(filepath.Join(rm.packDataDir, packFileName)); err == nil {
 			res.Status = tabletop_save.Failed // todo: re-check pack data consistency if such error is detected
-			return err
+			return err, nil
 
 		} else if bytes.Compare(urlRes.Data, file) != 0 {
 			res.Status = tabletop_save.Failed
-			return errors.New("hash collision / file inconsistency detected (you are a unicorn)")
+			return errors.New("hash collision / file inconsistency detected (you are a unicorn)"), nil
 		}
 
 		res.ResourceUrl = "pack://" + packFileName
 		res.Status = tabletop_save.Packed
-		return nil
+		return nil, nil
 	}
 	// first we check the entries ahead of time, then we rely on the singleton nature of the syscalls
 	escapedName := tabletop_save.GetCacheFilename(urlRes.Url)
-	return rm.writeResource(filenames, escapedName, urlRes.Data, res)
+	return nil, &ApplicationFile{urlRes.Data, escapedName, res}
 }
 
-func (rm *PackData) writeResource(filenames *RwFilenameSlice, destinationName string, blob []byte, res *tabletop_save.GameResource) error {
+func (rm *PackData) writeResource(filenames *SynchronisedFilenameSet, destinationName string, blob []byte, res *tabletop_save.GameResource) (error, *ApplicationFile) {
 	filenames.mu.RLock()
 	attempt := 0
 	attemptedName := fmt.Sprintf("%s-%d", destinationName, attempt)
@@ -208,10 +212,16 @@ func (rm *PackData) writeResource(filenames *RwFilenameSlice, destinationName st
 	}
 	filenames.mu.RUnlock()
 
-	return rm.flushAndUpdate(res, blob, filenames)
+	return nil, &ApplicationFile{blob, attemptedName, res}
 }
 
-func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte, filenames *RwFilenameSlice) error {
+type ApplicationFile struct {
+	blob     []byte
+	filepath string
+	res      *tabletop_save.GameResource
+}
+
+func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte, filenames *SynchronisedFilenameSet) error {
 	escapedName := tabletop_save.GetCacheFilename(res.ResourceUrl)
 	written, failedAttempts, criticalErr := wrapped_io.AttemptToWriteExtLess(rm.packDataDir, escapedName, 10, file)
 	if criticalErr != nil {
@@ -239,30 +249,34 @@ func (rm *PackData) flushAndUpdate(res *tabletop_save.GameResource, file []byte,
 	return nil
 }
 
-func (rm *PackData) AddRemoteCachedFile(res *tabletop_save.GameResource, filenames *RwFilenameSlice, scanner *tabletop_save.GameCacheFinder) error {
+func (rm *PackData) AddRemoteCachedFile(res *tabletop_save.GameResource, scanner *tabletop_save.GameCacheFinder) (error, *ApplicationFile) {
 	filePath, ok := scanner.ResourceCached[tabletop_save.GetCacheFilename(res.ResourceUrl)]
 	if !ok {
-		return errors.New("cached file not found")
+		return errors.New("cached file not found"), nil
 	}
 
 	file, fileChecksum := wrapped_io.GetFileAndChecksum(filePath)
 	if fileChecksum == nil {
-		return errors.New("cached file not found")
+		return errors.New("cached file not found"), nil
 	}
 
 	packDatafile, ok := rm.sha3Archive[hex.EncodeToString(fileChecksum)]
 	if ok {
 		res.ResourceUrl = "pack://" + packDatafile
 		res.Status = tabletop_save.Packed
-		return nil
+		return nil, nil
 	} else {
 		destinationFilename := tabletop_save.GetCacheFilename(res.ResourceUrl)
-		return rm.writeResource(filenames, destinationFilename, file, res)
+		return nil, &ApplicationFile{
+			blob:     file,
+			filepath: destinationFilename,
+			res:      res,
+		}
 	}
 }
 
 func (rm *PackData) cleanup() error {
-	filenames, err := NewRwFilenameSlice(rm.packDataDir)
+	filenames, err := NewSynchronisedFilenameSet(rm.packDataDir)
 	if err != nil {
 		return err
 	}
@@ -299,7 +313,7 @@ func cleanupMap(mappedUrlExists map[string]presentKey, target *map[string]string
 	return deletedOnce
 }
 
-func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *RwFilenameSlice) map[string]presentKey {
+func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *SynchronisedFilenameSet) map[string]presentKey {
 	var mappedFileExists = make(map[string]presentKey)
 	for url, file := range urlToFileMap {
 		if _, ok := filenames.entries[file]; ok {
@@ -311,53 +325,99 @@ func (rm *PackData) scanMap(urlToFileMap map[string]string, filenames *RwFilenam
 	return mappedFileExists
 }
 
-func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) error {
+func (rm *PackData) ImportFromSave(ctx context.Context, data *tabletop_save.TSSaveFile, gameDir string) chan error {
+	var errChan = make(chan error)
+	defer close(errChan)
+	// may contain filenames or urls
+	var seen = make(map[string]struct{})
+	var fileChan = make(chan *ApplicationFile)
+	var wg sync.WaitGroup
+
 	resources := data.GetAllResources()
 	cacheFinder, err := tabletop_save.InitGameCacheFinder(gameDir)
 	if err != nil {
-		return err
+		errChan <- err
+		return errChan
 	}
 
-	filenames, err := NewRwFilenameSlice(rm.packDataDir)
+	filenames, err := NewSynchronisedFilenameSet(rm.packDataDir)
 	if err != nil {
-		return err
+		errChan <- err
+		return errChan
 	}
 
 	for _, resource := range resources {
 		cacheFinder.MutCacheStatus(resource)
 	}
-	// may contain filenames or urls
-	var seen = make(map[string]struct{})
-	for idx := range resources {
-		var resourceRef = resources[idx]
-		if _, already := seen[resourceRef.ResourceUrl]; already {
-			continue
-		}
-		seen[resourceRef.ResourceUrl] = struct{}{}
 
-		var errSw error
-		switch resourceRef.Status {
-		case tabletop_save.Remote, tabletop_save.RemoteCached:
-			if packUrl, ok := rm.urlArchive[resourceRef.ResourceUrl]; ok {
-				resourceRef.ResourceUrl = "pack://" + packUrl
-				resourceRef.Status = tabletop_save.Packed
-			} else if resourceRef.Status == tabletop_save.Remote {
-				errSw = rm.AddRemoteFile(ctx, resourceRef, filenames)
+	go func(ctx context.Context) {
+		wg.Add(1)
+		defer wg.Done()
+
+		select {
+		case <-ctx.Done():
+			return
+		case file, done := <-fileChan:
+			if !done {
+				errw, written := rm.writeResource(filenames, file.filepath, file.blob, file.res)
+				if errw != nil {
+					errChan <- err
+					return
+				}
+				if err := rm.flushAndUpdate(written.res, written.blob, filenames); err != nil {
+					errChan <- err
+					return
+				}
 			} else {
-				errSw = rm.AddRemoteCachedFile(resourceRef, filenames, &cacheFinder)
+				return
 			}
-		case tabletop_save.Local:
-			errSw = rm.AddLocalFile(resourceRef, filenames)
-		default:
-			// no-op
 		}
-		if errSw != nil {
-			log.Println(errSw)
-			errSw = nil
-		}
+	}(ctx)
+
+	for idx := range resources {
+		wg.Add(1)
+		go func(idx int, fileChan chan *ApplicationFile, errChan chan error) {
+			defer wg.Done()
+			var resourceRef = resources[idx]
+			if _, already := seen[resourceRef.ResourceUrl]; already {
+				return
+			}
+			seen[resourceRef.ResourceUrl] = struct{}{}
+
+			// todo: the only async speedup is doing the initial check, the filename write is best done sync.
+			var errSw error
+			var file *ApplicationFile
+			switch resourceRef.Status {
+			case tabletop_save.Remote, tabletop_save.RemoteCached:
+				if packUrl, ok := rm.urlArchive[resourceRef.ResourceUrl]; ok {
+					resourceRef.ResourceUrl = "pack://" + packUrl
+					resourceRef.Status = tabletop_save.Packed
+				} else if resourceRef.Status == tabletop_save.Remote {
+					errSw, file = rm.AddRemoteFile(ctx, resourceRef)
+				} else {
+					errSw, file = rm.AddRemoteCachedFile(resourceRef, &cacheFinder)
+				}
+			case tabletop_save.Local:
+				errSw, file = rm.AddLocalFile(resourceRef)
+			default:
+				errSw = fmt.Errorf("invalid resource status: %d", resourceRef.Status)
+			}
+			if errSw != nil {
+				log.Println(errSw)
+				errChan <- errSw
+				return
+			}
+			if file != nil {
+				fileChan <- file
+			}
+		}(idx, fileChan, errChan)
+	}
+	wg.Wait()
+	if err := rm.FlushToDisk(); err != nil {
+		errChan <- err
 	}
 
-	return rm.FlushToDisk()
+	return errChan
 }
 
 // WriteSaveToPackData note: this is not thread safe
