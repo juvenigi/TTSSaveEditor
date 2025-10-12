@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,8 +86,7 @@ func (api *CacheManagerApi) GetProperties() properties.ApplicationPropertiesView
 func (api *CacheManagerApi) GetTabletopSaves(scanDir string) error {
 	defer noPanicBeHappy(api.ctx)
 
-	pp := api.applicationProperties
-	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(scanDir, pp.PackDataDir)
+	err, resChan := tabletop_save.GetTabletopSaveFilesAsync(scanDir, api.packData)
 	if err != nil {
 		return err
 	}
@@ -111,40 +111,37 @@ func (api *CacheManagerApi) GetTabletopSaves(scanDir string) error {
 func (api *CacheManagerApi) WriteToPackData(saveLocation string, saveName string) error {
 	defer noPanicBeHappy(api.ctx)
 
+	if strings.TrimSpace(saveLocation) == "" {
+		return errors.New("empty saveName")
+	}
+
 	if ok := api.singletonLock.TryLock(); !ok {
 		return errors.New("api busy")
 	}
 	defer api.singletonLock.Unlock()
 
-	appProperties := api.applicationProperties
-	gameDir := appProperties.GameDir
-	packDataDir := appProperties.PackDataDir
-
-	saveData, err := tabletop_save.GetTabletopSaveFile(saveLocation, packDataDir)
+	saveData, err := tabletop_save.GetTabletopSaveFile(saveLocation, api.packData)
 	if err != nil {
 		return err
 	}
 
-	var errCh = api.packData.ImportFromSave(api.ctx, saveData, gameDir)
-	select {
-	case errFc, done := <-errCh:
-		if done {
-			break
-		} else if errFc != nil {
-			return errFc
-		}
-	case <-api.ctx.Done():
+	minorErr, err := tabletop_save.AddGameResources(&api.packData, api.ctx, saveData, api.applicationProperties.GameDir)
+	if minorErr != nil {
+		// todo
+		fmt.Println("minorErr:", minorErr)
+		//runtime.LogError(api.ctx, fmt.Sprint(minorErr))
+	}
+	if err != nil {
+		return err
 	}
 
-	if len(saveName) > 0 {
-		modifiedJsonBlob, err := saveData.IntoPortable(api.seed, saveName)
-		if err != nil {
-			return err
-		}
+	modifiedJsonBlob, err := saveData.IntoPortable(api.seed, saveName)
+	if err != nil {
+		return err
+	}
 
-		if err = api.packData.WriteSaveToPackData(saveData.GetSaveName(), modifiedJsonBlob); err != nil {
-			return err
-		}
+	if err = api.packData.WriteSaveToPackData(saveData.GetSaveName(), modifiedJsonBlob); err != nil {
+		return err
 	}
 
 	return nil
@@ -161,13 +158,13 @@ func (api *CacheManagerApi) CreateSingleplayerSave(saveLocation string, saveName
 
 	appProperties := api.applicationProperties
 
-	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, appProperties.PackDataDir)
+	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, api.packData)
 	if err != nil {
 		return err
 	}
 	allResources := saveFile.GetAllResources()
 
-	if err = api.packData.LocalizePackedResources(allResources); err != nil {
+	if err = tabletop_save.LocalizePackedResources(&api.packData, allResources); err != nil {
 		return err
 	}
 
@@ -184,13 +181,13 @@ func (api *CacheManagerApi) ConstructPackCachedSave(saveLocation string, saveNam
 
 	appProperties := api.applicationProperties
 
-	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, appProperties.PackDataDir)
+	saveFile, err := tabletop_save.GetTabletopSaveFile(saveLocation, api.packData)
 	if err != nil {
 		return err
 	}
 	allResources := saveFile.GetAllResources()
 
-	if err := api.packData.CachePackedResources(allResources, appProperties.GameDir); err != nil {
+	if err := tabletop_save.CachePackedResources(&api.packData, allResources, appProperties.GameDir); err != nil {
 		return err
 	}
 

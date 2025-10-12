@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 )
 
 // ResourceBundle todo: JsonPointer in ResourceBundle is currently unused -- remove
@@ -20,6 +21,11 @@ type GameResource struct {
 	JsonPointer string
 	ResourceUrl string
 	Status      ResourceStatus
+}
+
+func (res *GameResource) UpdateToPacked(written string) {
+	res.ResourceUrl = "pack://" + written
+	res.Status = Packed
 }
 
 // ResourceStatus `RemoteCached` is a subset of `Remote` from a philosophical point of view, however
@@ -42,29 +48,27 @@ const (
 
 const steamApiUrlPrefix = "https://steamusercontent"
 
-func deduceResourceStatus(url string, packDir string) ResourceStatus {
+func deduceResourceStatus(url string, packData resource_map.PackData) ResourceStatus {
 	if strings.HasPrefix(url, "file:///") {
-		if strings.HasPrefix(url[fileLen:], packDir) {
+		if strings.HasPrefix(url[fileLen:], packData.PackDataDir) {
 			return PackPath
 		} else {
 			return Local
 		}
-	} else if strings.HasPrefix(url, "pack://") {
-		return Packed
 	} else if strings.HasPrefix(url, steamApiUrlPrefix) {
 		return Steam
-	} else if strings.HasPrefix(url, "http") {
+	} else if _, present := packData.UrlArchive[url]; present {
+		return Packed
+	} else {
 		return Remote
 	}
-
-	return Failed
 }
 
 var protocolPrefix = regexp.MustCompile(`^[^:]+:///?`)
 
-func (gr *GameResource) createJsonPatch() string {
-	patchPath := strings.ReplaceAll(gr.JsonPointer, ".", "/")
-	url := gr.ResourceUrl
+func (res *GameResource) createJsonPatch() string {
+	patchPath := strings.ReplaceAll(res.JsonPointer, ".", "/")
+	url := res.ResourceUrl
 
 	separatorString := string(filepath.Separator)
 	var escapedUrl string

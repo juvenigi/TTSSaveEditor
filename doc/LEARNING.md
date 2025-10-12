@@ -289,3 +289,35 @@ func TestStringsBuilder_nilBufferCopy(t *testing.T) {
 - I made too many jumps between languages
 - I focused too much on golang, therefore I must not pretend to speak about pointers/values in general, or to add more
   context around certain topics.
+
+## State management
+
+Application state is something that virtually _all_ programming languages struggle to get right. It's often coarse,
+brittle, and difficult to expand. Frameworks like Spring "solve" this by offering a large `map[string]any` of instances
+(sometimes a collection of instances) for you to inject into your service classes which in turn also reside inside this
+map.
+
+Issues raised by most state management solutions:
+
+- resource pooling
+- lifecycle controls
+- scoping (global, internal, per-request, new instance every time)
+  (anything more?)
+
+I arrived at a conclusion that perhaps it was not the best idea to manage state within golang code, or at least the
+current state management leaves a lot to be desired.
+
+Considering Golang favoritism towards explicitness, something akin to `BeanFactory` class is likely the best way to go.
+
+The `BeanFactory` could work the following way:
+
+- define "crafting recipes" during `init()` execution of a package
+    - it must be overridable and be package-aware, so that you don't step on a landmine of hardcoding unmockable items
+- having a `BeanFactory` may result in easier debugging, because you could provide faked dependencies during the test
+    - albeit, it does seem impossible to fake/mock a `structs` receiver without resorting to performance-penalizing
+      interfaces, which is a bummer. At the same time, it's important to remind yourself that running real code is
+      always better than mocking, and creating mocks (at least after following golang's ideology) is counterproductive.
+- the bean factory should incorporate a single-parent inheritance model for scopes and must be self-composable
+- when exposed to the outside world, it should 'auto-scope' itself instead of polluting the environment.
+
+(any more considerations?)

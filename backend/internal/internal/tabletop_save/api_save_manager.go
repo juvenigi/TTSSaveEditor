@@ -5,12 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 	"tts-cache-manager-cli/util"
 )
 
-func GetTabletopSaveFilesAsync(scanDir string, packDataDir string) (error, chan util.Result[TSSaveFile]) {
+func GetTabletopSaveFilesAsync(scanDir string, packData resource_map.PackData) (error, chan util.Result[TSSaveFile]) {
 	resChan := make(chan util.Result[TSSaveFile])
-	sameAsPackData := strings.EqualFold(packDataDir, scanDir)
+	sameAsPackData := strings.EqualFold(packData.PackDataDir, scanDir)
 
 	filenames, err := WalkDirForSaveNames(scanDir, sameAsPackData)
 	if err != nil {
@@ -27,7 +28,7 @@ func GetTabletopSaveFilesAsync(scanDir string, packDataDir string) (error, chan 
 			wg.Add(1)
 			go func(fileN string) {
 				defer wg.Done()
-				if save, err := GetTabletopSaveFile(fileN, packDataDir); err != nil {
+				if save, err := GetTabletopSaveFile(fileN, packData); err != nil {
 					resChan <- util.Result[TSSaveFile]{Err: err}
 				} else {
 					resChan <- util.Result[TSSaveFile]{Result: *save}
@@ -41,7 +42,7 @@ func GetTabletopSaveFilesAsync(scanDir string, packDataDir string) (error, chan 
 	return nil, resChan
 }
 
-// todo: fix cyclic import of pack data json
+// WalkDirForSaveNames todo: fix cyclic import of pack data json
 func WalkDirForSaveNames(scanDir string, isPackData bool) ([]string, error) {
 	var saves []string
 	metadataSkipped := false

@@ -7,6 +7,7 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/evanphx/json-patch v0.5.2
 	github.com/ncruces/zenity v0.10.14
+	github.com/pkg/errors v0.9.1
 	github.com/wailsapp/wails/v2 v2.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -36,7 +37,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/randall77/makefat v0.0.0-20210315173500-7ddd0e42c844 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/samber/lo v1.51.0 // indirect

@@ -40,6 +40,9 @@
 
 # TODOs
 
+- [x] detect that the url is already present in PackData
+- [ ] fix `User-Agent` and other request headers https://www.perplexity.ai/search/what-is-the-best-way-to-avoid-LU8dX0NRR_KivjRlqMgI9Q
+
 - unclean impl.: currently using "Packed" as "Modified" - maybe I should name it appropriately or use a different
   status?
 

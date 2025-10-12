@@ -11,31 +11,28 @@ type GameCacheFinder struct {
 	ResourceCached map[string]string
 }
 
-func InitGameCacheFinder(gameDir string) (GameCacheFinder, error) {
-	var result GameCacheFinder
-	cachedEntries := make(map[string]string)
+func (rv *GameCacheFinder) InitGameCacheFinder(gameDir string) error {
+	rv.ResourceCached = make(map[string]string)
 
-	err := filepath.WalkDir(gameDir+string(filepath.Separator), func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
+	if err := filepath.WalkDir(gameDir+string(filepath.Separator), func(path string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
 			name := d.Name()
 			name = strings.TrimSuffix(name, filepath.Ext(name))
+			rv.ResourceCached[name] = path
 
-			cachedEntries[name] = path
+		} else if err != nil {
+			return err
 		}
+
 		return nil
-	})
-	if err != nil {
-		return result, err
+	}); err != nil {
+		return err
 	}
 
-	result.ResourceCached = cachedEntries
-	return result, nil
+	return nil
 }
 
-func (rv *GameCacheFinder) MutCacheStatus(res *GameResource) {
+func (rv *GameCacheFinder) Update(res *GameResource) {
 	if res.Status == Local || res.Status == RemoteCached || res.Status == Packed {
 		return
 	}

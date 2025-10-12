@@ -41,7 +41,7 @@ func TestCreateBlankPackDataJson(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pd.packDataDir == "" {
+	if pd.PackDataDir == "" {
 		t.Fatal("pd is nil")
 	}
 

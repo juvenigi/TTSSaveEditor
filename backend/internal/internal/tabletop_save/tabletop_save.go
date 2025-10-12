@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"tts-cache-manager-cli/backend/internal/internal/resource_map"
 	"tts-cache-manager-cli/backend/internal/internal/tabletop_save/internal"
 	"tts-cache-manager-cli/util/base52"
 
@@ -46,7 +47,7 @@ type TagsAndSaveNamePartialJson struct {
 }
 
 // GetTabletopSaveFile note: `seed` param is nillable
-func GetTabletopSaveFile(loc string, packDataDir string) (*TSSaveFile, error) {
+func GetTabletopSaveFile(loc string, packData resource_map.PackData) (*TSSaveFile, error) {
 	blobBytes, err := os.ReadFile(loc)
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func GetTabletopSaveFile(loc string, packDataDir string) (*TSSaveFile, error) {
 		}
 	}
 
-	bundles, err := ParseResourcesBundles(unmarshalledData, packDataDir)
+	bundles, err := ParseResourcesBundles(unmarshalledData, packData)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +283,7 @@ func normalize(str *string) string {
 
 const fileLen = len("file:///")
 
-func ParseResourcesBundles(unmarshalledJson any, packDir string) ([]ResourceBundle, error) {
+func ParseResourcesBundles(unmarshalledJson any, packData resource_map.PackData) ([]ResourceBundle, error) {
 
 	bundleMap := make(map[string]internal.Bundle)
 
@@ -295,20 +296,20 @@ func ParseResourcesBundles(unmarshalledJson any, packDir string) ([]ResourceBund
 			Guid:        normalize(bundle.Guid),
 			Name:        normalize(bundle.Name),
 			Nickname:    normalize(bundle.Nickname),
-			resources:   MapToResources(&bundle, packDir),
+			resources:   MapToResources(&bundle, packData),
 		})
 	}
 
 	return results, nil
 }
 
-func MapToResources(bb *internal.Bundle, packDataDir string) []GameResource {
+func MapToResources(bb *internal.Bundle, packData resource_map.PackData) []GameResource {
 	var urls []GameResource
 	for pointer, url := range bb.ResUrls {
 		urls = append(urls, GameResource{
 			JsonPointer: pointer,
 			ResourceUrl: url,
-			Status:      deduceResourceStatus(url, packDataDir),
+			Status:      deduceResourceStatus(url, packData),
 		})
 	}
 	return urls

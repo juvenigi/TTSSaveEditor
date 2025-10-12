@@ -81,7 +81,7 @@ func TestLoadCacheStatus_CacheEntryExists(t *testing.T) {
 		Status:      0,
 	}
 
-	//cache.MutCacheStatus(&res)
+	//cache.Update(&res)
 	//fileScanned, fileOk := cache.ResourceCached[cacheFilename]
 	//if !fileScanned || !fileOk {
 	//	t.Fatal("File not found in cache")
