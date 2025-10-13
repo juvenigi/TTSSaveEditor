@@ -32,11 +32,7 @@ func (rv *GameCacheFinder) InitGameCacheFinder(gameDir string) error {
 	return nil
 }
 
-func (rv *GameCacheFinder) Update(res *GameResource) {
-	if res.Status == Local || res.Status == RemoteCached || res.Status == Packed {
-		return
-	}
-
+func (rv *GameCacheFinder) DetectCached(res *GameResource) {
 	cacheFilename := GetCacheFilename(res.ResourceUrl)
 	if _, ok := rv.ResourceCached[cacheFilename]; ok {
 		res.Status = RemoteCached

@@ -203,7 +203,7 @@ func AddGameResources(rm *resource_map.PackData, ctx context.Context, data *TSSa
 	}
 	resources := data.GetAllResources()
 	for _, resource := range resources {
-		cache.Update(resource)
+		cache.DetectCached(resource)
 	}
 
 	client := httpfetcher.InitHttpClient()
