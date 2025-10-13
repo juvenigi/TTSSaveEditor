@@ -185,9 +185,7 @@ func (api *CacheManagerApi) ConstructPackCachedSave(saveLocation string, saveNam
 	if err != nil {
 		return err
 	}
-	allResources := saveFile.GetAllResources()
-
-	if err := tabletop_save.CachePackedResources(&api.packData, allResources, appProperties.GameDir); err != nil {
+	if err := tabletop_save.CachePackedResources(&api.packData, saveFile.GetAllResources(), appProperties.GameDir); err != nil {
 		return err
 	}
 

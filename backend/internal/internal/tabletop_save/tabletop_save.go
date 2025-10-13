@@ -200,14 +200,14 @@ func (s *TSSaveFile) GetJsonPatchBytesForPacked(keepPaths bool) []byte {
 	var patches []string
 	allResources := s.GetAllResources()
 	for _, res := range allResources {
-		if !keepPaths && res.Status == PackPath {
-			res.ResourceUrl = "pack://" + filepath.Base(res.ResourceUrl)
-			res.Status = Packed
-		}
-
-		if res.Status != Packed {
-			continue
-		}
+		//if !keepPaths && res.Status == PackPath {
+		//	res.ResourceUrl = "pack://" + filepath.Base(res.ResourceUrl)
+		//	res.Status = Packed
+		//}
+		//
+		//if res.Status != Packed {
+		//	continue
+		//}
 		patches = append(patches, res.createJsonPatch())
 	}
 	var sb strings.Builder

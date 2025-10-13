@@ -17,10 +17,15 @@ type UrlResource struct {
 	Checksum []byte
 }
 
+func InitHttpClient() *http.Client {
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	return &http.Client{Transport: tr}
+}
+
 // GetResourceAsync clarification: url comes from the savefile, which sloppily accepts links without a proper http/https scheme
 // which is something that golang's http client does not tolerate. For the file to be properly substituted, I still need
 // to write the 'malformed' url, but I need to prepend 'http://' for every incorrect url.
-func GetResourceAsync(ctx context.Context, url string) (*UrlResource, error) {
+func GetResourceAsync(ctx context.Context, client *http.Client, url string) (*UrlResource, error) {
 	var requestUrl string
 	if strings.HasPrefix(url, "http") {
 		requestUrl = url
@@ -31,6 +36,7 @@ func GetResourceAsync(ctx context.Context, url string) (*UrlResource, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "error creating request: %s", url)
 	}
+	setupHeaders(request)
 	var resp *http.Response
 	var attempt = 0
 	for attempt < 3 {
@@ -58,6 +64,15 @@ func GetResourceAsync(ctx context.Context, url string) (*UrlResource, error) {
 	}
 
 	return result, nil
+}
+
+func setupHeaders(req *http.Request) {
+	// Set headers
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "+
+		"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
+	req.Header.Set("Connection", "keep-alive")
 }
 
 func InitUrlResult(url string, respBody io.ReadCloser) (*UrlResource, error) {

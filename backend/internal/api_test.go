@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"tts-cache-manager-cli/backend/internal/internal/properties"
 )
 
 func TestCacheManagerApi_WriteToPackData(t *testing.T) {
@@ -33,9 +34,17 @@ func TestCacheManagerApi_WriteToPackDataWithCache(t *testing.T) {
 	t.Log(os.Executable())
 	api := NewCacheManagerApi()
 	api.Startup(t.Context())
-
+	appProperties, err := properties.SetupDefaultAppProperties()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appProperties.PackDataDir = "C:\\Users\\joghourt\\IdeaProjects\\TabletopResourceManager\\build\\bin\\PackData"
+	view := appProperties.ToView()
+	if err = api.SetProperties(*view); err != nil {
+		t.Fatal(err)
+	}
 	packDir := api.applicationProperties.PackDataDir
-	if err := api.ConstructPackCachedSave(filepath.Join(packDir, "TS_Save_68.pack.json"), "willYouLoadBruh"); err != nil {
+	if err := api.ConstructPackCachedSave(filepath.Join(packDir, "TS_Save_70.pack.json"), "willYouLoadBruh"); err != nil {
 		t.Fatal(err)
 	}
 }

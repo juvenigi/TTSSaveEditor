@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -42,8 +43,8 @@ func AddLocalFile(rm *resource_map.PackData, res *GameResource) (error, *Applica
 	}
 }
 
-func AddRemoteFile(rm *resource_map.PackData, ctx context.Context, res *GameResource) (error, *ApplicationFile) {
-	urlRes, err := httpfetcher.GetResourceAsync(ctx, res.ResourceUrl)
+func AddRemoteFile(rm *resource_map.PackData, ctx context.Context, res *GameResource, client *http.Client) (error, *ApplicationFile) {
+	urlRes, err := httpfetcher.GetResourceAsync(ctx, client, res.ResourceUrl)
 	if err != nil {
 		res.Status = Failed
 		return err, nil
@@ -128,8 +129,9 @@ func AddRemoteCachedFile(rm *resource_map.PackData, res *GameResource, scanner *
 }
 
 func CachePackedResources(rm *resource_map.PackData, resList []*GameResource, gameDir string) error {
-	for _, res := range resList {
-		if res.Status == Packed {
+	for i := range resList {
+		res := resList[i]
+		if strings.HasPrefix(res.ResourceUrl, "pack://") {
 			if err := copyPackedToGameCache(res, gameDir, rm.PackDataDir); err != nil {
 				return err
 			}
@@ -140,14 +142,11 @@ func CachePackedResources(rm *resource_map.PackData, resList []*GameResource, ga
 }
 
 func copyPackedToGameCache(res *GameResource, gameDir string, packDataDir string) error {
-	if res.Status != Packed {
-		return fmt.Errorf("unexpected resource type %d", res.Status)
-	}
-
 	var lastSlash = strings.LastIndex(res.JsonPointer, "/")
 	lastJsonPointerSegment := res.JsonPointer[lastSlash+1:]
 
 	var filename = strings.TrimPrefix(res.ResourceUrl, "pack://")
+	res.ResourceUrl = filename
 
 	var gameCacheFolder string
 	switch lastJsonPointerSegment {
@@ -182,8 +181,6 @@ func copyPackedToGameCache(res *GameResource, gameDir string, packDataDir string
 		return err
 	}
 
-	res.ResourceUrl = filename
-
 	return nil
 }
 
@@ -209,6 +206,12 @@ func AddGameResources(rm *resource_map.PackData, ctx context.Context, data *TSSa
 		cache.Update(resource)
 	}
 
+	client := httpfetcher.InitHttpClient()
+	defer client.CloseIdleConnections()
+
+	debouncer := util.Debouncer{Pause: 1 * time.Second}
+	debouncer.Init()
+
 	for idx := range resources {
 		var resourceRef = resources[idx]
 		if _, already := seen[resourceRef.ResourceUrl]; already {
@@ -229,9 +232,12 @@ func AddGameResources(rm *resource_map.PackData, ctx context.Context, data *TSSa
 				if packUrl, ok := rm.UrlArchive[resourceRef.ResourceUrl]; ok {
 					resourceRef.UpdateToPacked(packUrl)
 				} else if resourceRef.Status == Remote || resourceRef.Status == Steam {
+					if errSw := debouncer.AwaitHost(ctx, resourceRef.ResourceUrl); errSw != nil {
+						break
+					}
 					timeoutCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 					defer cancel()
-					errSw, file = AddRemoteFile(rm, timeoutCtx, resourceRef)
+					errSw, file = AddRemoteFile(rm, timeoutCtx, resourceRef, client)
 				} else {
 					errSw, file = AddRemoteCachedFile(rm, resourceRef, &cache)
 				}
@@ -288,7 +294,7 @@ func LocalizePackedResources(rm *resource_map.PackData, resources []*GameResourc
 
 	for idx := range resources {
 		var res = resources[idx]
-		if res.Status == Packed && strings.HasPrefix(res.ResourceUrl, "pack://") {
+		if strings.HasPrefix(res.ResourceUrl, "pack://") {
 			filename := res.ResourceUrl[packLen:]
 			if slices.Contains(packJsonLocs, filename) {
 				res.ResourceUrl = "file:///" + filepath.Join(rm.PackDataDir, filename)
