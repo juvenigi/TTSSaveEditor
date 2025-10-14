@@ -67,17 +67,11 @@ func (rv *GameCacheSnooper) GetUsedFilesMask() map[string]struct{} {
 func GetAllSaveLocations(defaultGameDir string) []string {
 	var result []string
 	var err error
-	saveDir := filepath.Join(defaultGameDir, "Saves")
-	workshopDir := filepath.Join(defaultGameDir, "Mods", "Workshop")
+	saveDir := filepath.Join(defaultGameDir, "PreserveMe")
 
 	result, err = getSaveLocations(saveDir)
 	if err != nil {
 		return nil
-	}
-
-	workshopLocs, err := getSaveLocations(workshopDir)
-	if err == nil {
-		result = append(result, workshopLocs...)
 	}
 
 	return result

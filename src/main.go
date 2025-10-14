@@ -4,6 +4,7 @@ import (
 	"ReallyDumbCopyPaste/tabletop_save"
 	"ReallyDumbCopyPaste/util"
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,10 +16,14 @@ func main() {
 
 	dummy := bufio.NewReader(os.Stdin)
 
-	gameDir, err := GetDefaultGameDir()
+	wd, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
+	if !strings.EqualFold(filepath.Base(wd), "PreserveMe") {
+		panic(errors.New("this program must be located in a folder named PreserveMe"))
+	}
+	gameDir := filepath.Dir(wd)
 
 	savefiles := tabletop_save.GetAllSaveLocations(gameDir)
 
