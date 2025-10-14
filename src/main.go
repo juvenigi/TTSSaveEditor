@@ -2,6 +2,7 @@ package main
 
 import (
 	"ReallyDumbCopyPaste/tabletop_save"
+	"ReallyDumbCopyPaste/util"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 )
 
 func main() {
+	defer util.ShowWindowOnPanic()
 	gameDir, err := GetDefaultGameDir()
 	if err != nil {
 		panic(err)
