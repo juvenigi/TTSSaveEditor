@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 }
 
 func GetUnusedResources(saveFiles []string, cacheDir string) ([]string, error) {
-	var cache tabletop_save.GameCacheFinder
+	var cache tabletop_save.GameCacheSnooper
 	if err := cache.InitGameCacheFinder(cacheDir); err != nil {
 		return nil, err
 	}
@@ -43,15 +44,19 @@ func GetUnusedResources(saveFiles []string, cacheDir string) ([]string, error) {
 		save.Patch(&cache)
 	}
 
-	mask := cache.GetMask()
-	items, err := DeepLs(cacheDir)
+	mask := cache.GetUsedFilesMask()
+	fmt.Println("mask size:", len(mask))
+	cacheItems, err := DeepLs(cacheDir)
 	if err != nil {
 		return nil, err
 	}
 
 	var deleteList []string
-	for _, entry := range items {
-		if _, ok := mask[tabletop_save.GetCacheFilename(filepath.Base(entry))]; !ok {
+	for _, entry := range cacheItems {
+		base := filepath.Base(entry)
+		ext := filepath.Ext(base)
+		cacheFilename := tabletop_save.GetCacheFilename(strings.TrimSuffix(base, ext))
+		if _, ok := mask[cacheFilename]; !ok {
 			deleteList = append(deleteList, entry)
 		}
 	}

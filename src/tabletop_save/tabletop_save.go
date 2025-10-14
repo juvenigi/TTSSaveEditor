@@ -76,7 +76,7 @@ func (t *TabletopSave) extractResourceRecur(unmarshalledJson any, cursor *util.J
 	}
 }
 
-func (t *TabletopSave) Patch(cache *GameCacheFinder) {
+func (t *TabletopSave) Patch(cache *GameCacheSnooper) {
 	for _, res := range t.resources {
 		cache.MarkAsUsed(res.ResourceUrl)
 	}

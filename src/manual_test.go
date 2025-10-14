@@ -53,6 +53,10 @@ func TestGetUnusedResources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Log("Pending deletion:")
+	if len(resources) == 0 {
+		t.Log("Nothing to delete")
+	}
 	for _, entry := range resources {
 		t.Log(entry)
 	}
