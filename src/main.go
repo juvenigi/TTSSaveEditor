@@ -3,6 +3,7 @@ package main
 import (
 	"ReallyDumbCopyPaste/tabletop_save"
 	"ReallyDumbCopyPaste/util"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +20,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	if !strings.EqualFold(filepath.Base(wd), "PreserveMe") {
+		panic(errors.New("this program must be located in a folder named PreserveMe"))
+	}
+	wd = filepath.Dir(wd)
 
 	err = Reconcile(gameDir, wd, false)
 	if err != nil {
