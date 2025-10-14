@@ -2,6 +2,8 @@ package main
 
 import (
 	"ReallyDumbCopyPaste/tabletop_save"
+	"ReallyDumbCopyPaste/util"
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,23 +11,41 @@ import (
 )
 
 func main() {
+	defer util.ShowWindowOnPanic()
+
+	dummy := bufio.NewReader(os.Stdin)
+
 	gameDir, err := GetDefaultGameDir()
 	if err != nil {
 		panic(err)
 	}
-	wd, err := os.Getwd()
+
+	savefiles := tabletop_save.GetAllSaveLocations(gameDir)
+
+	unused, err := GetUnusedResources(savefiles, gameDir)
 	if err != nil {
 		panic(err)
+	}
+	fmt.Println("Unused resources:")
+	if len(unused) == 0 {
+		fmt.Println("No unused resources")
+	} else {
+		for _, v := range unused {
+			fmt.Println(v)
+		}
+		fmt.Println("press enter to continue")
+		_, _ = dummy.ReadString('\n')
+	}
+	fmt.Println("Deleting...")
+	for _, entry := range unused {
+		err = os.Remove(filepath.Join(gameDir, entry))
+		if err != nil {
+			panic(err)
+		}
 	}
 
-	err = Reconcile(gameDir, wd, false)
-	if err != nil {
-		panic(err)
-	}
-	err = Reconcile(wd, gameDir, false)
-	if err != nil {
-		panic(err)
-	}
+	fmt.Println("press enter to exit")
+	_, _ = dummy.ReadString('\n')
 }
 
 func GetUnusedResources(saveFiles []string, cacheDir string) ([]string, error) {
@@ -33,8 +53,6 @@ func GetUnusedResources(saveFiles []string, cacheDir string) ([]string, error) {
 	if err := cache.InitGameCacheFinder(cacheDir); err != nil {
 		return nil, err
 	}
-
-	fmt.Println("here")
 
 	for _, entry := range saveFiles {
 		var save tabletop_save.TabletopSave
