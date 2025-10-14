@@ -75,7 +75,7 @@ const separator = string(filepath.Separator)
 func DeepLs(loc string) ([]string, error) {
 	var srcFiles []string
 	if err := fs.WalkDir(os.DirFS(loc), ".", func(path string, d fs.DirEntry, err error) error {
-		if strings.HasPrefix(path, "Workshop") || strings.EqualFold(path, "PreserveMe") {
+		if strings.HasPrefix(path, "Workshop") || strings.HasPrefix(path, "PreserveMe") {
 			return nil
 		}
 		if err != nil {
