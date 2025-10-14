@@ -2,6 +2,7 @@ package main
 
 import (
 	"ReallyDumbCopyPaste/tabletop_save"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -26,38 +27,24 @@ func main() {
 	}
 }
 
-// todo: cleanup, probably better to ask for confirmation before deleting a truckload of files
-func GetUnusedResources(gameDir string) ([]string, error) {
-	saveDir := filepath.Join(gameDir, "Saves")
-	workshopDir := filepath.Join(gameDir, "Mods", "Workshop")
-
-	entries, err := os.ReadDir(saveDir)
-	if err != nil {
-		return nil, err
-	}
-	workshopEntries, err := os.ReadDir(workshopDir)
-	if err != nil {
-		return nil, err
-	}
-	entries = append(entries, workshopEntries...)
-
+func GetUnusedResources(saveFiles []string, cacheDir string) ([]string, error) {
 	var cache tabletop_save.GameCacheFinder
-	if err := cache.InitGameCacheFinder(gameDir); err != nil {
+	if err := cache.InitGameCacheFinder(cacheDir); err != nil {
 		return nil, err
 	}
 
-	for _, entry := range entries {
+	fmt.Println("here")
+
+	for _, entry := range saveFiles {
 		var save tabletop_save.TabletopSave
-		if err := save.Init(entry.Name()); err != nil {
+		if err := save.Init(entry); err != nil {
 			return nil, err
 		}
 		save.Patch(&cache)
 	}
 
 	mask := cache.GetMask()
-
-	// todo: exclude Workshop dir
-	items, err := DeepLs(filepath.Join(gameDir, "Mods"))
+	items, err := DeepLs(cacheDir)
 	if err != nil {
 		return nil, err
 	}
